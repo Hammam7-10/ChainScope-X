@@ -16,6 +16,18 @@ class EffectType(StrEnum):
     READS = "READS"
     SEARCHES = "SEARCHES"
     TRANSFORMS = "TRANSFORMS"
+    CREATES = "CREATES"
+    WRITES = "WRITES"
+    TRANSMITS = "TRANSMITS"
+    DELEGATES = "DELEGATES"
+    REQUIRES_APPROVAL = "REQUIRES_APPROVAL"
+
+
+class GraphEdgeType(StrEnum):
+    """Relationship labels between graph resources; not observed operations."""
+    READS = "READS"
+    SEARCHES = "SEARCHES"
+    TRANSFORMS = "TRANSFORMS"
     USES = "USES"
     CREATES = "CREATES"
     WRITES = "WRITES"
@@ -148,7 +160,7 @@ class GraphEdge(Contract):
     edge_id: str = Field(min_length=1)
     source_node_id: str = Field(min_length=1)
     target_node_id: str = Field(min_length=1)
-    edge_type: EffectType
+    edge_type: GraphEdgeType
     execution_id: str = Field(min_length=1)
     event_ids: list[str] = Field(min_length=1)
     classification: Classification

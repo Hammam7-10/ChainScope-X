@@ -13,15 +13,16 @@ The source-of-truth validation models live in `app/core/schemas/contracts.py` an
 7. VERIFIED remediation status requires at least one verification run ID; verification records themselves need execution IDs and evidence IDs.
 8. Unknown fields are rejected; timestamps are timezone-aware by contract intention and should be UTC at ingestion.
 
-## R3 additive graph-edge semantic
+## R4 correction: events and graph relationships are distinct
 
-R3 adds the existing graph relationship value `USES` to the shared `EffectType` enum because `GraphEdge.edge_type` already uses that contract and R1 lineage semantics require explicit `USES` edges. This is additive: no prior enum value or observed R2 event was changed, and the six R2 adapters continue emitting only their established event effects. `GraphEdge.invocation_ids` is likewise an optional additive field with an empty default for older records.
+`EffectType` represents operations actually recorded by an instrumented adapter; `GraphEdgeType` represents relationships used only to connect graph nodes. `USES` belongs to `GraphEdgeType` and is not an observed operation. R4 removes `USES` from the observed-event enum and serializes `GraphEdge.edge_type` with the same historical wire label through `GraphEdgeType`, preserving graph-edge values and R0–R3 observed R2 records. No R2 adapter ever emitted a `USES` effect. `GraphEdge.invocation_ids` remains an optional field with an empty default for older records. Decision D-027 records this correction to historical R3 design decision D-021.
 
 ## JSON Schema generation
 JSON schemas use the JSON Schema dialect emitted by Pydantic. Enum sets and required fields are machine readable. Cross-record invariants—such as edge endpoints existing in the same graph, policy applicability, or event IDs actually existing in a database—cannot be established by a single JSON Schema and must be enforced by service/database logic and integration tests.
 
-## Future RAG document/chunk metadata
-Every indexed chunk should retain `document_id`, `version`, `source`, `section`, optional `page`, stable `chunk_id`, `language` (BCP-47 tag, including Arabic and English variants), `effective_date`, `status`, `access_classification`, related `policy_id`, and content hash. Ingestion must preserve access rules and version provenance; retrieval results must return these references so text remains attributable. Updating a version must not silently erase prior source attribution; authorized deletion is explicit and auditable. Retrieved text is untrusted input and cannot override application security rules. These are a future metadata contract only; RAG and embeddings are not implemented in R1.
+## R4 RAG document/chunk metadata
+
+`app/rag/documents.py` and `app/rag/store.py` implement local Markdown/TXT ingestion, stable chunk IDs, `document_id`, `version`, relative `source`, `section`, optional `page`, language, optional `policy_id`, access classification, active/obsolete status, and content/chunk hashes. Query metadata filters enforce the caller's clearance and exclude obsolete documents before vector ranking. Re-indexing a changed version removes stale chunks for that document; deletion APIs can remove one version or retain a selected version. Every returned passage carries source metadata for citations. Structured `PolicyRule` values are loaded separately from the trusted local catalog; retrieved natural-language passages are untrusted evidence/context and cannot define or modify executable rules.
 
 ## Limits
 The current models are design/validation contracts, not a complete immutable event store, authentication system, policy engine, or production API. No third-party package was installed for R1.

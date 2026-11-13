@@ -17,9 +17,9 @@ from app.core.schemas.contracts import Assessment, EffectType
 class AnalysisService:
     """Analyze one R2 ExecutionReport at a time, preserving execution boundaries."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, graph_builder: CapabilityGraphBuilder | None = None) -> None:
         self.mismatch_analyzer = EffectMismatchAnalyzer()
-        self.graph_builder = CapabilityGraphBuilder()
+        self.graph_builder = graph_builder or CapabilityGraphBuilder()
         self.policy_evaluator = PolicyEvaluator()
         self.finding_generator = FindingGenerator()
 
@@ -96,6 +96,8 @@ class AnalysisService:
             execution_id=execution_id, status=status, coverage_status=report.coverage.status,
             monitored_scope=list(report.coverage.monitored_scope), mismatches=mismatches,
             graph_nodes=list(graph.nodes), graph_edges=list(graph.edges), paths=list(graph.paths),
+            graph_truncated=graph.truncated,
+            graph_truncation_reasons=list(graph.truncation_reasons),
             policy_evaluations=list(policy_result.evaluations), findings=list(findings),
             incomplete_reasons=incomplete_reasons, assessed_at=assessed_at,
         )

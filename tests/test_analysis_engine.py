@@ -8,9 +8,10 @@ from app.analysis import AnalysisService
 from app.analysis.findings import FindingGenerator
 from app.analysis.graph import CapabilityGraphBuilder
 from app.analysis.models import AnalysisStatus, MismatchCategory, PolicyApplicability, PolicyDecision
+from app.core.schemas.analysis import AnalysisResult
 from app.core.schemas.contracts import (
     Assessment, Classification, CoverageStatus, EffectType, GraphEdge,
-    PolicyKind, PolicyRule, Severity,
+    GraphEdgeType, PolicyKind, PolicyRule, Severity,
 )
 from app.sandbox.resources import EXTERNAL_DESTINATION, INTERNAL_DESTINATION
 from app.sandbox.runner import LabRunner, default_monitored_scope
@@ -71,8 +72,9 @@ class EndToEndScenarioTests(unittest.TestCase):
         self.assertTrue(any(path.node_ids[0] == source and
                             path.destination_id == stored["output"]["stored_file_id"]
                             for path in result.paths))
-        self.assertTrue({EffectType.TRANSFORMS, EffectType.CREATES, EffectType.WRITES,
-                         EffectType.USES}.issubset({edge.edge_type for edge in result.graph_edges}))
+        edge_types = {edge.edge_type for edge in result.graph_edges}
+        self.assertTrue({GraphEdgeType.TRANSFORMS, GraphEdgeType.CREATES,
+                         GraphEdgeType.WRITES, GraphEdgeType.USES}.issubset(edge_types))
         event_by_id = {event.event_id: event for event in report.events}
         for edge in result.graph_edges:
             self.assertEqual(edge.execution_id, execution_id)
@@ -604,16 +606,63 @@ class ComparisonAndIntegrityTests(unittest.TestCase):
         real_edge = result.graph_edges[0]
         cycle_edge = GraphEdge(
             edge_id="edge:test-cycle", source_node_id=tool_node.node_id,
-            target_node_id=asset_node.node_id, edge_type=EffectType.USES,
+            target_node_id=asset_node.node_id, edge_type=GraphEdgeType.USES,
             execution_id=execution_id, event_ids=[event.event_id],
             classification=event.classification, evidence_ids=[event.evidence[0].evidence_id],
             invocation_ids=[event.invocation_id],
         )
-        cyclic_paths = CapabilityGraphBuilder()._enumerate_paths(
+        cyclic_paths, truncation_reasons = CapabilityGraphBuilder()._enumerate_paths(
             execution_id, tuple(nodes.values()), tuple(result.graph_edges) + (cycle_edge,))
         self.assertTrue(cyclic_paths)
+        self.assertFalse(truncation_reasons)
         self.assertTrue(all(len(path.node_ids) == len(set(path.node_ids)) for path in cyclic_paths))
         self.assertTrue(real_edge.event_ids)
+
+
+class GraphTruncationTests(unittest.TestCase):
+    @staticmethod
+    def _safe_report():
+        lab = LabRunner()
+        execution_id = lab.start_execution(default_monitored_scope())
+        transformed = lab.invoke(execution_id, "data-transformer", {
+            "asset_ids": ["asset:public:handbook"], "title": "Internal report"})
+        lab.invoke(execution_id, "workspace-storage", {
+            "file_id": transformed["output"]["file_id"]})
+        return lab, lab.finish_execution(execution_id)
+
+    def test_effect_enum_excludes_graph_only_uses_relation(self):
+        self.assertNotIn("USES", EffectType.__members__)
+        self.assertEqual(GraphEdgeType("USES"), GraphEdgeType.USES)
+        with self.assertRaises(ValueError):
+            EffectType("USES")
+
+    def test_depth_limit_marks_result_inconclusive(self):
+        lab, report = self._safe_report()
+        result = AnalysisService(graph_builder=CapabilityGraphBuilder(max_depth=1)).analyze(
+            report, lab.registry.list_manifests(), (), lab.evidence_store)
+        self.assertTrue(result.graph_truncated)
+        self.assertIn("graph_depth_limit_reached", result.graph_truncation_reasons)
+        self.assertEqual(result.status, AnalysisStatus.INCONCLUSIVE)
+
+    def test_path_limit_marks_result_inconclusive(self):
+        lab, report = self._safe_report()
+        result = AnalysisService(graph_builder=CapabilityGraphBuilder(max_paths=1)).analyze(
+            report, lab.registry.list_manifests(), (), lab.evidence_store)
+        self.assertTrue(result.graph_truncated)
+        self.assertIn("graph_path_limit_reached", result.graph_truncation_reasons)
+        self.assertEqual(result.status, AnalysisStatus.INCONCLUSIVE)
+
+    def test_truncated_result_cannot_claim_unqualified_no_violation(self):
+        lab, report = self._safe_report()
+        result = AnalysisService(graph_builder=CapabilityGraphBuilder(max_paths=1)).analyze(
+            report, lab.registry.list_manifests(), (), lab.evidence_store)
+        payload = result.model_dump()
+        payload.update(
+            status=AnalysisStatus.NO_VIOLATION_OBSERVED_WITHIN_COMPLETE_SCOPE,
+            incomplete_reasons=["graph_path_limit_reached"],
+        )
+        with self.assertRaisesRegex(ValueError, "no-violation conclusion"):
+            AnalysisResult.model_validate(payload)
 
 
 if __name__ == "__main__":

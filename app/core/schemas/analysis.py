@@ -81,6 +81,8 @@ class AnalysisResult(Contract):
     graph_nodes: list[GraphNode] = Field(default_factory=list)
     graph_edges: list[GraphEdge] = Field(default_factory=list)
     paths: list[CapabilityPath] = Field(default_factory=list)
+    graph_truncated: bool = False
+    graph_truncation_reasons: list[str] = Field(default_factory=list)
     policy_evaluations: list[PolicyEvaluation] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)
     incomplete_reasons: list[str] = Field(default_factory=list)
@@ -128,6 +130,10 @@ class AnalysisResult(Contract):
             raise ValueError("policy evaluation path crosses the execution boundary")
         if any(item.path is not None and item.path not in self.paths for item in self.policy_evaluations):
             raise ValueError("policy evaluation references a path outside the result graph")
+        if self.graph_truncated != bool(self.graph_truncation_reasons):
+            raise ValueError("graph truncation flag and reasons must be consistent")
+        if self.graph_truncated and not set(self.graph_truncation_reasons).issubset(self.incomplete_reasons):
+            raise ValueError("graph truncation reasons must be recorded as incomplete analysis reasons")
         if any(set(item.path.event_ids) - set(item.event_ids)
                for item in self.policy_evaluations if item.path is not None):
             raise ValueError("policy evaluation omits event IDs from its evidence-backed path")
@@ -135,7 +141,8 @@ class AnalysisResult(Contract):
                for item in self.findings):
             raise ValueError("finding evidence IDs do not match its resolvable references")
         if self.status == AnalysisStatus.NO_VIOLATION_OBSERVED_WITHIN_COMPLETE_SCOPE:
-            if self.coverage_status != CoverageStatus.COMPLETE or self.incomplete_reasons:
+            if (self.coverage_status != CoverageStatus.COMPLETE or self.incomplete_reasons
+                    or self.graph_truncated):
                 raise ValueError("a no-violation conclusion requires complete, gap-free analysis")
         if self.status == AnalysisStatus.CONFIRMED_VIOLATION and not any(
                 item.assessment == Assessment.CONFIRMED_VIOLATION for item in self.findings):

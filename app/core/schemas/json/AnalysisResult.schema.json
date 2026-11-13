@@ -200,7 +200,6 @@
         "READS",
         "SEARCHES",
         "TRANSFORMS",
-        "USES",
         "CREATES",
         "WRITES",
         "TRANSMITS",
@@ -426,7 +425,7 @@
           "type": "string"
         },
         "edge_type": {
-          "$ref": "#/$defs/EffectType"
+          "$ref": "#/$defs/GraphEdgeType"
         },
         "execution_id": {
           "minLength": 1,
@@ -472,6 +471,22 @@
       ],
       "title": "GraphEdge",
       "type": "object"
+    },
+    "GraphEdgeType": {
+      "description": "Relationship labels between graph resources; not observed operations.",
+      "enum": [
+        "READS",
+        "SEARCHES",
+        "TRANSFORMS",
+        "USES",
+        "CREATES",
+        "WRITES",
+        "TRANSMITS",
+        "DELEGATES",
+        "REQUIRES_APPROVAL"
+      ],
+      "title": "GraphEdgeType",
+      "type": "string"
     },
     "GraphNode": {
       "additionalProperties": false,
@@ -681,6 +696,18 @@
         "$ref": "#/$defs/CapabilityPath"
       },
       "title": "Paths",
+      "type": "array"
+    },
+    "graph_truncated": {
+      "default": false,
+      "title": "Graph Truncated",
+      "type": "boolean"
+    },
+    "graph_truncation_reasons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Graph Truncation Reasons",
       "type": "array"
     },
     "policy_evaluations": {

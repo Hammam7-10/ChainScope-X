@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Iterable
 
 from app.core.schemas.contracts import (
-    CapabilityPath, Classification, EffectType, GraphEdge, GraphNode,
+    CapabilityPath, Classification, EffectType, GraphEdge, GraphEdgeType, GraphNode,
     ObservedEffect, highest_classification,
 )
 
@@ -17,12 +17,16 @@ class GraphBuildResult:
     edges: tuple[GraphEdge, ...]
     paths: tuple[CapabilityPath, ...]
     issues: tuple[str, ...]
+    truncated: bool = False
+    truncation_reasons: tuple[str, ...] = ()
 
 
 class CapabilityGraphBuilder:
     """Build one graph per execution; no inference from prose, names, or timing."""
 
     def __init__(self, *, max_depth: int = 16, max_paths: int = 512) -> None:
+        if max_depth < 1 or max_paths < 1:
+            raise ValueError("max_depth and max_paths must be positive integers")
         self.max_depth = max_depth
         self.max_paths = max_paths
 
@@ -70,7 +74,7 @@ class CapabilityGraphBuilder:
             ))
             return node_id
 
-        def add_edge(source_id: str | None, target_id: str | None, edge_type: EffectType,
+        def add_edge(source_id: str | None, target_id: str | None, edge_type: GraphEdgeType,
                      event: ObservedEffect) -> None:
             if source_id is None or target_id is None:
                 return
@@ -122,7 +126,7 @@ class CapabilityGraphBuilder:
                 if source_id is None:
                     issues.append("observed_read_without_stable_source")
                 else:
-                    add_edge(source_id, tool_id, event.effect_type, event)
+                    add_edge(source_id, tool_id, GraphEdgeType(event.effect_type.value), event)
                 continue
 
             if event.effect_type == EffectType.TRANSFORMS:
@@ -136,26 +140,26 @@ class CapabilityGraphBuilder:
                         if input_node is None:
                             issues.append("transformation_lineage_resource_unresolved")
                         else:
-                            add_edge(input_node, tool_id, EffectType.USES, event)
+                            add_edge(input_node, tool_id, GraphEdgeType.USES, event)
                 if destination_id is None:
                     issues.append("transformation_output_unresolved")
                 else:
-                    add_edge(tool_id, destination_id, EffectType.TRANSFORMS, event)
+                    add_edge(tool_id, destination_id, GraphEdgeType.TRANSFORMS, event)
                 continue
 
             # A report-to-file CREATE in one invocation continues a recorded transform
             # lineage directly; routing back through the same tool node would make a loop.
             if (event.effect_type == EffectType.CREATES and source_id and destination_id
                     and (event.invocation_id, event.source_resource) in transform_outputs):
-                add_edge(source_id, destination_id, EffectType.CREATES, event)
+                add_edge(source_id, destination_id, GraphEdgeType.CREATES, event)
                 continue
 
             if source_id is not None:
-                add_edge(source_id, tool_id, EffectType.USES, event)
+                add_edge(source_id, tool_id, GraphEdgeType.USES, event)
             elif event.source_resource:
                 issues.append("effect_source_unresolved")
             if destination_id is not None:
-                add_edge(tool_id, destination_id, event.effect_type, event)
+                add_edge(tool_id, destination_id, GraphEdgeType(event.effect_type.value), event)
             elif event.destination_resource:
                 issues.append("effect_destination_unresolved")
             if source_id is None and destination_id is None:
@@ -163,11 +167,13 @@ class CapabilityGraphBuilder:
 
         nodes = tuple(node_by_id[key] for key in sorted(node_by_id))
         edges = tuple(sorted(edge_by_key.values(), key=lambda item: item.edge_id))
-        paths = self._enumerate_paths(execution_id, nodes, edges)
-        return GraphBuildResult(nodes, edges, paths, tuple(dict.fromkeys(issues)))
+        paths, truncation_reasons = self._enumerate_paths(execution_id, nodes, edges)
+        issues.extend(truncation_reasons)
+        return GraphBuildResult(nodes, edges, paths, tuple(dict.fromkeys(issues)),
+                                bool(truncation_reasons), truncation_reasons)
 
     def _enumerate_paths(self, execution_id: str, nodes: tuple[GraphNode, ...],
-                         edges: tuple[GraphEdge, ...]) -> tuple[CapabilityPath, ...]:
+                         edges: tuple[GraphEdge, ...]) -> tuple[tuple[CapabilityPath, ...], tuple[str, ...]]:
         node_by_id = {node.node_id: node for node in nodes}
         outgoing: dict[str, list[GraphEdge]] = {}
         for edge in edges:
@@ -178,6 +184,7 @@ class CapabilityGraphBuilder:
 
         paths: list[CapabilityPath] = []
         seen: set[tuple[tuple[str, ...], tuple[str, ...]]] = set()
+        truncation_reasons: set[str] = set()
 
         def add_path(node_ids: list[str], edge_path: list[GraphEdge]) -> None:
             if not edge_path or len(paths) >= self.max_paths:
@@ -199,21 +206,29 @@ class CapabilityGraphBuilder:
 
         def walk(start_id: str, current_id: str, node_path: list[str], edge_path: list[GraphEdge],
                  visited: set[str]) -> None:
-            if len(paths) >= self.max_paths or len(edge_path) >= self.max_depth:
+            eligible = [edge for edge in outgoing.get(current_id, [])
+                        if edge.target_node_id not in visited and edge.target_node_id in node_by_id]
+            if len(edge_path) >= self.max_depth:
+                if eligible:
+                    truncation_reasons.add("graph_depth_limit_reached")
                 return
-            for edge in outgoing.get(current_id, []):
+            if len(paths) >= self.max_paths:
+                if eligible:
+                    truncation_reasons.add("graph_path_limit_reached")
+                return
+            for index, edge in enumerate(eligible):
+                if len(paths) >= self.max_paths:
+                    truncation_reasons.add("graph_path_limit_reached")
+                    return
                 target = edge.target_node_id
-                if target in visited or target not in node_by_id:
-                    continue
                 next_nodes = node_path + [target]
                 next_edges = edge_path + [edge]
                 add_path(next_nodes, next_edges)
                 walk(start_id, target, next_nodes, next_edges, visited | {target})
-                if len(paths) >= self.max_paths:
+                if len(paths) >= self.max_paths and index < len(eligible) - 1:
+                    truncation_reasons.add("graph_path_limit_reached")
                     return
 
         for start_id in sorted(outgoing):
             walk(start_id, start_id, [start_id], [], {start_id})
-            if len(paths) >= self.max_paths:
-                break
-        return tuple(paths)
+        return tuple(paths), tuple(sorted(truncation_reasons))
