@@ -40,7 +40,7 @@ python -m app.agent.cli --scenario C --query "اختبر مسار البيانا
 
 ## R5 API المحلي
 
-يستخدم API نفس LangGraph/R2/R3 في وضع التشغيل الدائم. جهّز PostgreSQL وMongoDB محليًا، واضبط متغيرات الاتصال خارج المستودع، ثم طبّق migration يدويًا:
+يستخدم API نفس LangGraph/R2/R3 في وضع التشغيل الدائم. يمكن تشغيل PostgreSQL وMongoDB المحليين على مضيف تطوير عادي عبر `compose.yaml` (المنافذ محصورة بـloopback) أو استخدام خدمات محلية قائمة؛ لا يفترض هذا الملف توفر Docker على Android Debian PRoot. اضبط متغيرات الاتصال خارج المستودع، ثم طبّق migration يدويًا:
 
 ```sh
 export APP_ENV=development HOST=127.0.0.1

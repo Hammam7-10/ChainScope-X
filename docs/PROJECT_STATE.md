@@ -6,7 +6,7 @@
 
 ## الأساس والفروع
 
-المشروع في `/home/ubuntu/chainscope-x` على المستودع الخاص `Hammam7-10/ChainScope-X`. `main` والوسم `r4-checkpoint` محفوظان كما هما؛ لا تعديلات أو دمج لخط الأساس. فرع العمل `r5-backend-persistence` مخصص لتنفيذ R5 فقط. تقرير مدير R5: `MANAGER_HANDOFF_R5.txt`؛ تقرير المرحلة الفني: `docs/PHASE_REPORTS/R5.md`.
+المشروع في `/home/ubuntu/chainscope-x` على المستودع الخاص `Hammam7-10/ChainScope-X`. `main` والوسمان `r4-checkpoint` و`r4-tablet-verified` محفوظان كما هما؛ لا تعديلات أو دمج لخط الأساس. فرع العمل `r5-backend-persistence` مخصص لتنفيذ R5 فقط. تقرير مدير R5: `MANAGER_HANDOFF_R5.txt`؛ تقرير المرحلة الفني: `docs/PHASE_REPORTS/R5.md`.
 
 ## بنية R5
 

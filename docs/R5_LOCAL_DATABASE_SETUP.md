@@ -1,57 +1,63 @@
 # R5 Local Database Setup
 
-This setup is for a trusted development machine with PostgreSQL and MongoDB already installed or otherwise available locally. It does not require paid services. Docker Compose may be used on a conventional development computer if the operator prefers it, but it is optional and is not a requirement of the application. Do not assume Docker, systemd, or a MongoDB server can run inside Android Debian PRoot.
+This setup is for a trusted development host. It uses only local, self-hosted PostgreSQL and MongoDB and no paid service. The repository includes an optional `compose.yaml` for a conventional Linux/macOS/Windows development computer with Docker Compose installed. Docker is not required by the application and is not assumed to exist or work inside Android Debian PRoot.
 
-## 1. Prepare isolated development databases
+## 1. Start local development databases
 
-Create a dedicated development PostgreSQL database and a dedicated MongoDB database. Give the development user only the privileges needed to use the ChainScope schema and test its own data. Do not reuse production data, production credentials, or another project's database. The application does not create PostgreSQL tables automatically.
+On a conventional development computer that already has Docker Compose, copy the placeholder configuration to the ignored `.env` file, set strong local-only passwords, and start the two services:
 
-Set credentials in a local secret manager or the current shell (the examples below are intentionally empty placeholders):
+```sh
+cp .env.example .env
+# Edit .env locally: set POSTGRES_PASSWORD and MONGO_INITDB_ROOT_PASSWORD.
+# Keep the actual values only in this ignored file or a local secret manager.
+docker compose up -d
+```
+
+Both container ports are bound to `127.0.0.1`; named volumes preserve database state across restarts. `docker compose down` stops the containers but preserves data. `docker compose down -v` deletes the local database volumes and is destructive. The Compose file contains no password defaults; it refuses to start until the required variables are set.
+
+For a native PostgreSQL/Mongo installation, start the services using that host's existing service manager and create isolated development databases/users. The app does not install servers or provision users. Do not use production databases or another project's data.
+
+## 2. Configure the application
+
+Set these environment variables in the local shell/secret manager or the ignored `.env` file:
 
 ```sh
 export APP_ENV=development
 export HOST=127.0.0.1
-export CHAIN_SCOPE_POSTGRES_DSN=''
-export CHAIN_SCOPE_MONGODB_URI=''
+export CHAIN_SCOPE_POSTGRES_DSN='postgresql+asyncpg://<user>:<password>@127.0.0.1:5432/chainscope_dev'
+export CHAIN_SCOPE_MONGODB_URI='mongodb://<user>:<password>@127.0.0.1:27017/?authSource=admin'
 export CHAIN_SCOPE_MONGODB_DATABASE='chainscope_dev'
 ```
 
-The PostgreSQL DSN must select the asyncpg driver. Accepted forms include `postgresql+asyncpg://...` and `postgresql://...` (the application normalizes the latter). MongoDB uses a standard Mongo URI. Never put actual values in Git, issue text, logs, this document, or `.env.example`.
+Replace placeholders locally; never put real values in Git, tickets, logs, this document, or `.env.example`. Percent-encode reserved characters in URI credentials. The Mongo root user created by Compose authenticates against `admin`; the ChainScope database name remains `chainscope_dev`. PostgreSQL accepts `postgresql+asyncpg://...`; `postgresql://...` is normalized by the config adapter.
 
-## 2. Apply the schema migration
+## 3. Apply the schema migration and run the API
 
 From the project root with its virtual environment active:
 
 ```sh
 python -m pip install -r requirements-dev.txt
 alembic upgrade head
-```
-
-The migration creates the R5 tables described in `DATABASE_SCHEMA.md`. Startup will not call `create_all()` or run Alembic automatically.
-
-## 3. Run the local API
-
-```sh
 APP_ENV=development HOST=127.0.0.1 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-`GET /health` is liveness only. `GET /api/v1/health/dependencies` checks the configured PostgreSQL and MongoDB adapters. The API group refuses to operate outside development/test or when the configured bind host is not loopback. No authentication exists, so do not bind the API to `0.0.0.0`, a LAN interface, or a public host.
+`alembic upgrade head` creates the R5 tables in PostgreSQL. Startup does not run Alembic or call `create_all()`. `GET /health` is liveness only; `GET /api/v1/health/dependencies` checks configured PostgreSQL and MongoDB adapters. API business routes require development/test mode, a loopback `HOST`, and a direct loopback client peer. No authentication exists; do not bind to a LAN/public interface and do not put the app behind a reverse proxy.
 
 ## 4. Optional live database integration test
 
-Use dedicated databases named for testing, not development or production. First apply the migration to the dedicated PostgreSQL test database; configure a separate MongoDB test database whose name contains `test`:
+Use dedicated test databases, never the development or production databases. Configure the test variables, point Alembic explicitly at the test PostgreSQL DSN, apply the migration, then run the opt-in integration test:
 
 ```sh
-export CHAIN_SCOPE_TEST_POSTGRES_DSN='postgresql+asyncpg://.../chainscope_test'
-export CHAIN_SCOPE_TEST_MONGODB_URI='mongodb://...'
+export CHAIN_SCOPE_TEST_POSTGRES_DSN='postgresql+asyncpg://<user>:<password>@127.0.0.1:5432/chainscope_test'
+export CHAIN_SCOPE_TEST_MONGODB_URI='mongodb://<user>:<password>@127.0.0.1:27017/?authSource=admin'
 export CHAIN_SCOPE_TEST_MONGODB_DATABASE='chainscope_test'
 export CHAIN_SCOPE_POSTGRES_DSN="$CHAIN_SCOPE_TEST_POSTGRES_DSN"
 alembic upgrade head
 HF_HUB_OFFLINE=1 python -m pytest -q tests/test_r5_live_databases.py
 ```
 
-The integration test requires all three `CHAIN_SCOPE_TEST_*` values and rejects database names that are not explicitly test-named. It inserts unique synthetic rows and removes only the rows it created. Without these variables, the test is skipped; local SQLite/fake-Mongo tests are not described as live PostgreSQL/Mongo validation.
+The test requires all three `CHAIN_SCOPE_TEST_*` values and rejects database names not explicitly test-named. It inserts uniquely identified synthetic records and removes only its own rows. Without those variables it is skipped; SQLite/fake-Mongo tests are not live-service verification.
 
 ## Android / Debian PRoot note
 
-The target tablet has not been used for this phase. R5's Python drivers were resolved for ARM64 in the remote build environment, but a compatible PostgreSQL/MongoDB server deployment inside PRoot is not established. No Docker, systemd, `mongod`, or database service is assumed to exist there. Keep the API on loopback and do not place database credentials in the app bundle. Any future remote database connection needs a separately approved threat model, transport encryption, access controls and tablet test phase.
+The Samsung target was not used for R5. Python drivers were resolved for ARM64 in the remote build environment, but a database-server deployment inside PRoot is not established. Do not assume Docker, systemd, `mongod`, or PostgreSQL is available there. The Compose file is for a conventional host only. Keep the API on loopback and do not bundle database credentials with the app. Any future remote database connection requires separately approved threat modeling, transport encryption, access controls, and tablet testing.
