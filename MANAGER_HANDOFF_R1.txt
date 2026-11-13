@@ -1,0 +1,68 @@
+CHAIN SCOPE X — MANAGER HANDOFF R1
+Architecture and Data Contracts
+Date: 2026-11-13
+
+1. STATUS
+R1 is implemented and locally tested. It is awaiting Project Director review. The manager directive accepted R0 administratively and explicitly approved R1 only. R2 is not approved and has not started.
+
+2. BASELINE AND PRESERVATION
+Existing project: /home/ubuntu/chainscope-x. At R1 start, branch was main, working tree clean, and HEAD was 919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e (“Record verified R0 test evidence”). R0 source ZIP, Git bundle, and checksum file were present; SHA-256 checks passed. R0 files and history were preserved; no history rewrite or external push occurred. docs/PROJECT_CHARTER.md and docs/ARCHITECTURE.md were absent at R1 start. Architecture is now documented; the supplied master prompt and R1 directive remain the governing project instructions.
+
+3. ACTUAL WORK
+Defined precise domain contracts for Tool, declared capabilities/effects, permission scope, observed effect, mismatch, capability path, policy rule, finding, coverage, remediation candidate, and verification run. Added Pydantic v2 validation models and a JSON Schema exporter, producing 10 schema snapshots. Documented graph semantics, security/policy assessment boundaries, data classification, evidence provenance, relational schema, API groups, RAG metadata, system architecture, five Mermaid diagrams, risks, and limits. Updated PROJECT_STATE, IMPLEMENTATION_PLAN, DECISION_LOG; created docs/PHASE_REPORTS/R1.md and this handoff.
+
+4. IMPORTANT CONTRACTS
+- A capability declaration is a claim, not permission and not observed execution. Permission scope is separate.
+- An observed effect must retain event_id, execution_id, invocation_id, tool_id, sequence, time, operation, outcome, classification, and evidence reference. LLM-generated text is not evidence.
+- Undeclared effect, missing expected effect, unexpected resource/destination/operation, and incomplete comparison are distinct mismatch classes. A missing event alone is not proof of tool misconduct.
+- Coverage values: COMPLETE, PARTIAL, FAILED, UNKNOWN. COMPLETE requires explicit scope and no known in-scope gaps, and applies only to that declared/tested boundary—not OS-wide observation. A positive, traceable prohibited event can support a violation despite incomplete broader coverage; absence under PARTIAL/FAILED/UNKNOWN is INCONCLUSIVE, never proven safe.
+- A graph edge must be directed, execution-linked, and supported by observed event and evidence IDs. A composed capability finding requires a meaningful actual path and an active, applicable structured policy; descriptions or connectivity do not invent edges.
+- Classifications are PUBLIC < INTERNAL < CONFIDENTIAL < RESTRICTED; transformed output inherits the highest sensitivity of inputs. No silent LLM declassification.
+- Confirmed violation requires demonstrated deterministic policy condition, event provenance, and path. Finding records coverage and uncertainty; severity is categorical, with no unsupported numeric confidence.
+- A VERIFIED remediation requires verification run references; verification must check dangerous blocking, legitimate workflow preservation, alternatives, and evidence.
+
+5. ARCHITECTURE AND DATABASE
+Target remains FastAPI with Jinja2/HTMX/vanilla JS, controlled synthetic lab, deterministic graph/policy services, LangGraph later, PostgreSQL relational records, and Chroma as vector retrieval only. Groq is optional and non-authoritative. Logical PostgreSQL tables cover users/roles, tools/versions/declarations, assets/classifications, destinations, policies/versions, scenarios/campaigns, runs/invocations/effects/coverage, graph nodes/edges, findings, remediation/verification, audit logs, and stored files. Foreign keys, uniqueness, indexes, JSONB boundaries, retention, and RLS considerations are documented. No database, migration, production API, RAG, or external service was connected in R1.
+
+6. FILES CREATED
+- docs/DOMAIN_MODEL.md
+- docs/DATA_CONTRACTS.md
+- docs/CAPABILITY_GRAPH_SPEC.md
+- docs/POLICY_MODEL.md
+- docs/DATABASE_SCHEMA.md
+- docs/API_CONTRACTS.md
+- docs/ARCHITECTURE.md
+- docs/PHASE_REPORTS/R1.md
+- app/core/schemas/contracts.py
+- app/core/schemas/export_json_schemas.py
+- app/core/schemas/json/*.schema.json (10 snapshots)
+- tests/test_r1_contracts.py
+- MANAGER_HANDOFF_R1.txt
+
+7. FILES MODIFIED
+- docs/PROJECT_STATE.md
+- docs/IMPLEMENTATION_PLAN.md
+- docs/DECISION_LOG.md
+No R0 application implementation files were modified.
+
+8. TRADE-OFFS AND OPEN ISSUES
+Pydantic v2 was already available through FastAPI, so it provides executable model validation without adding dependencies. JSON Schema cannot prove cross-record referential integrity or policy applicability; future service/database constraints and integration tests must do so. The policy model is intentionally small and deterministic. Complete monitoring is explicitly bounded to tested scope, not universal. The independent SQL/NoSQL academic requirement is unresolved; verify the exact instructor rubric before considering another database. No changes or credentials are required from the user now.
+
+9. TESTS AND ENVIRONMENT
+Command: python3 -m app.core.schemas.export_json_schemas — exported 10 schemas.
+Command: python3 -m unittest discover -s tests -v — 15 passed (3 R0 + 12 R1).
+Tests validate valid/invalid manifests, event provenance and required IDs, undeclared effect representation, conservative classification propagation, confidential external path representation, incomplete coverage as inconclusive (including UNKNOWN), and COMPLETE scope-gap validation, traceable policy/path requirements, remediation verification gate, and exclusion of LLM-generated evidence.
+Environment: Linux ARM64 (aarch64), Python 3.12.3, Git 2.43.0; existing FastAPI/Pydantic; no packages installed. No tablet, database, network service, or full integration testing occurred.
+
+10. GIT AND RECOVERY
+R0 baseline commit: 919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e. The R1 commit hash and final clean/dirty status will be recorded after final review and checkpoint commit. Original R0 recovery artifacts remain unchanged in /home/ubuntu/Downloads; new R1 artifacts/checksums will be saved separately if export succeeds.
+
+11. IMPLEMENTED VS TESTED VS DOCUMENTED
+Implemented: Pydantic data contracts, classification join helper, bounded absence assessment helper, policy evidence precondition helper, JSON Schema exporter/snapshots, and validation tests.
+Tested: those model/helper contracts under the 15 passing unit tests; schema export command completed.
+Documented only: architecture, five diagrams, PostgreSQL schema/relationships, API contracts, RAG metadata, production auth/storage, instrumentation completeness guarantees, full policy evaluation, graph traversal and remediation workflow. No full application feature is claimed.
+
+12. PROJECT DIRECTOR REVIEW REQUIRED
+Please review the R1 contract semantics, particularly bounded COMPLETE coverage, event-to-edge provenance, policy applicability responsibilities, classification propagation, and the unresolved SQL/NoSQL rubric. Decide whether to accept R1 and explicitly authorize or reject R2. No R2 work has begun.
+
+Recommended next phase after approval: R2 — Controlled Tool Laboratory.

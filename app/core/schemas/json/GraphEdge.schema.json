@@ -1,0 +1,85 @@
+{
+  "$defs": {
+    "Classification": {
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "RESTRICTED"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "EffectType": {
+      "enum": [
+        "READS",
+        "SEARCHES",
+        "TRANSFORMS",
+        "CREATES",
+        "WRITES",
+        "TRANSMITS",
+        "DELEGATES",
+        "REQUIRES_APPROVAL"
+      ],
+      "title": "EffectType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "edge_id": {
+      "minLength": 1,
+      "title": "Edge Id",
+      "type": "string"
+    },
+    "source_node_id": {
+      "minLength": 1,
+      "title": "Source Node Id",
+      "type": "string"
+    },
+    "target_node_id": {
+      "minLength": 1,
+      "title": "Target Node Id",
+      "type": "string"
+    },
+    "edge_type": {
+      "$ref": "#/$defs/EffectType"
+    },
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "event_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Event Ids",
+      "type": "array"
+    },
+    "classification": {
+      "$ref": "#/$defs/Classification"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "edge_id",
+    "source_node_id",
+    "target_node_id",
+    "edge_type",
+    "execution_id",
+    "event_ids",
+    "classification",
+    "evidence_ids"
+  ],
+  "title": "GraphEdge",
+  "type": "object"
+}

@@ -1,12 +1,12 @@
 # Implementation Plan
 
-Phases are gated; do not advance without explicit Project Director approval.
+Phases are gated. Progress to any subsequent phase requires explicit Project Director approval.
 
 | Phase | Scope | Acceptance (summary) | Status |
 |---|---|---|---|
-| R0 | Workspace audit and portable foundation | Real files, tests, Git/export, no secrets, tablet pending | Complete; review pending |
-| R1 | Architecture and data contracts | Concepts and schemas defined and tested | Not started |
-| R2 | Controlled synthetic tool lab | Instrumented operations; simulated sinks only | Not started |
+| R0 | Workspace audit and portable foundation | Real files, tests, Git/export, no secrets, tablet pending | Accepted administratively per manager directive |
+| R1 | Architecture and data contracts | Precise concepts, provenance/coverage, deterministic policy semantics, schemas/tests, recoverability | Implemented and tested; awaiting review |
+| R2 | Controlled synthetic tool lab | Instrumented operations; simulated sinks only | Not approved; not started |
 | R3 | Declared-vs-observed analysis | Known mismatches and safe cases tested | Not started |
 | R4 | Capability graph and deterministic policies | Evidence-backed composed paths and benign handling | Not started |
 | R5 | RAG and knowledge base | Genuine retrieval, source attribution, tests | Not started |
@@ -18,4 +18,4 @@ Phases are gated; do not advance without explicit Project Director approval.
 | R11 | Benchmark/final integration | Reproducible metrics and documented evidence | Not started |
 | T1-T3 | Tablet audit, transfer, runtime | Actual target-device checks | Forbidden until tablet available |
 
-Current stop point: R0 review. No R1 work is authorized by this checkpoint.
+Stop point: R1 review. R2 and all later phases are not authorized by this checkpoint.

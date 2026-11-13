@@ -1,30 +1,25 @@
 # Project State — ChainScope X
 
-**Current phase:** Remote R0 — Workspace Capability Audit and Portable Foundation
-**Status:** Implemented and locally tested; awaiting Project Director review.
+**Current phase:** Remote R1 — Architecture and Data Contracts
+**Status:** R1 design and validation contracts implemented; tests passed; awaiting Project Director review.
 **Last updated:** 2026-11-13
 
-## Verified
-- Workspace path: `/home/ubuntu/chainscope-x`; independent of the unavailable tablet project.
-- Runtime during audit: Linux, ARM64 (`aarch64`), Python 3.12.3.
-- Writable project files, Git 2.43.0, and `zip` are available.
-- FastAPI, Jinja2, and Uvicorn are importable without installing dependencies.
-- Standard-library `unittest` is available; pytest and HTTPX are not installed.
-- R0 tests were executed with `python3 -m unittest discover -s tests -v`.
-- Tablet compatibility, target Debian/Android environment, external integrations, and persistent retention across account/session lifecycle are not verified.
+## Verified baseline
+Project: `/home/ubuntu/chainscope-x`; Git branch `main`; R0 accepted administratively per manager directive. Before R1, HEAD was `919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e`, and the working tree was clean. The R0 ZIP, Git bundle, and checksums existed and passed SHA-256 validation. `docs/PROJECT_CHARTER.md` and `docs/ARCHITECTURE.md` were absent before R1. This work preserved R0 history and files.
 
-## Completed in R0
-- Created the minimal FastAPI foundation, responsive English-language landing page, local CSS, and health endpoint.
-- Added a basic standard-library test suite, project structure, starter documentation, and safe configuration examples.
-- Initialized Git and committed the R0 checkpoint.
-- Exported source ZIP, Git bundle, and SHA-256 checksums.
+The actual test environment remains Linux ARM64 (`aarch64`), Python 3.12.3, Git 2.43.0. Existing FastAPI/Pydantic were used; no package installation or external service occurred. Tablet compatibility remains unverified.
 
-## Pending / not implemented
-- R1 and all later phases; no domain contracts or application feature implementation.
-- PostgreSQL, Supabase, Google OAuth, Groq, ChromaDB, LangGraph, NGINX, and external service configuration.
-- Authentication and production deployment controls.
-- Tablet audit and compatibility testing; tablet was unavailable.
-- Independent NoSQL academic requirement clarification.
+## R1 completed scope
+Defined domain entities, effect and coverage contracts, classification propagation, graph/path semantics, deterministic policy requirements, finding and remediation evidence requirements, a logical PostgreSQL schema, RAG metadata, API groups, and five Mermaid diagrams. Added Pydantic v2 contracts, JSON Schema export snapshots, and deterministic validation tests. This is not a complete product implementation or connected database/policy engine.
+
+## Test evidence
+`python3 -m unittest discover -s tests -v`: 15 tests passed (3 R0 foundation tests and 12 R1 contract tests). `python3 -m app.core.schemas.export_json_schemas`: exported 10 JSON schemas. No live database, HTTP client, external integration, or tablet test was performed in R1.
+
+## Open issues and limits
+- Academic SQL/NoSQL interpretation remains unresolved; verify the exact instructor rubric before considering an independent document store.
+- R1 model validation does not establish cross-row referential integrity, real instrumentation coverage, policy applicability, database persistence, or end-to-end runtime correctness.
+- External identity, PostgreSQL, Chroma, LangGraph, Groq, object storage and the tablet are pending later authorized phases.
+- Project charter file was absent before R1; governing scope was the supplied master prompt and R1 manager directive.
 
 ## Next action
-Stop for Project Director review. Do not start R1 without an explicit instruction.
+Stop for Project Director review. R2 is not approved and has not started.

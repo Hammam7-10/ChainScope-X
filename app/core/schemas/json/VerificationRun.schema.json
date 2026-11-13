@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "VerificationOutcome": {
+      "enum": [
+        "DANGEROUS_BLOCKED",
+        "LEGITIMATE_PRESERVED",
+        "ALTERNATIVE_PATH_FOUND",
+        "INCOMPLETE",
+        "FAILED"
+      ],
+      "title": "VerificationOutcome",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "verification_run_id": {
+      "minLength": 1,
+      "title": "Verification Run Id",
+      "type": "string"
+    },
+    "remediation_id": {
+      "minLength": 1,
+      "title": "Remediation Id",
+      "type": "string"
+    },
+    "execution_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Execution Ids",
+      "type": "array"
+    },
+    "outcomes": {
+      "items": {
+        "$ref": "#/$defs/VerificationOutcome"
+      },
+      "minItems": 1,
+      "title": "Outcomes",
+      "type": "array"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "verification_run_id",
+    "remediation_id",
+    "execution_ids",
+    "outcomes",
+    "evidence_ids",
+    "completed_at"
+  ],
+  "title": "VerificationRun",
+  "type": "object"
+}

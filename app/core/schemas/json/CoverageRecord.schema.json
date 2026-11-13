@@ -1,0 +1,81 @@
+{
+  "$defs": {
+    "CoverageStatus": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "FAILED",
+        "UNKNOWN"
+      ],
+      "title": "CoverageStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "coverage_id": {
+      "minLength": 1,
+      "title": "Coverage Id",
+      "type": "string"
+    },
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/CoverageStatus"
+    },
+    "monitored_scope": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Monitored Scope",
+      "type": "array"
+    },
+    "monitored_operations": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Monitored Operations",
+      "type": "array"
+    },
+    "gaps": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Gaps",
+      "type": "array"
+    },
+    "recorder_version": {
+      "minLength": 1,
+      "title": "Recorder Version",
+      "type": "string"
+    },
+    "assessed_at": {
+      "format": "date-time",
+      "title": "Assessed At",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "coverage_id",
+    "execution_id",
+    "status",
+    "monitored_scope",
+    "recorder_version",
+    "assessed_at"
+  ],
+  "title": "CoverageRecord",
+  "type": "object"
+}

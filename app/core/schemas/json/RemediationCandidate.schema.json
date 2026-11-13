@@ -1,0 +1,91 @@
+{
+  "$defs": {
+    "RemediationType": {
+      "enum": [
+        "RESTRICT_DESTINATION",
+        "RESTRICT_ASSET",
+        "RESTRICT_OPERATION",
+        "FILTER_FIELDS",
+        "REQUIRE_APPROVAL",
+        "ADD_VALIDATION",
+        "BLOCK_EFFECT"
+      ],
+      "title": "RemediationType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "remediation_id": {
+      "minLength": 1,
+      "title": "Remediation Id",
+      "type": "string"
+    },
+    "finding_id": {
+      "minLength": 1,
+      "title": "Finding Id",
+      "type": "string"
+    },
+    "control_type": {
+      "$ref": "#/$defs/RemediationType"
+    },
+    "target": {
+      "minLength": 1,
+      "title": "Target",
+      "type": "string"
+    },
+    "blocked_path": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Blocked Path",
+      "type": "array"
+    },
+    "benign_scenarios_to_preserve": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Benign Scenarios To Preserve",
+      "type": "array"
+    },
+    "rationale": {
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "verification_criteria": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Verification Criteria",
+      "type": "array"
+    },
+    "status": {
+      "default": "PROPOSED",
+      "title": "Status",
+      "type": "string"
+    },
+    "verification_run_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Verification Run Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "remediation_id",
+    "finding_id",
+    "control_type",
+    "target",
+    "blocked_path",
+    "benign_scenarios_to_preserve",
+    "rationale",
+    "verification_criteria"
+  ],
+  "title": "RemediationCandidate",
+  "type": "object"
+}

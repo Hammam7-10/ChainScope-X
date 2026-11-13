@@ -1,0 +1,64 @@
+{
+  "$defs": {
+    "Classification": {
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "RESTRICTED"
+      ],
+      "title": "Classification",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "node_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 2,
+      "title": "Node Ids",
+      "type": "array"
+    },
+    "edge_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Edge Ids",
+      "type": "array"
+    },
+    "event_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Event Ids",
+      "type": "array"
+    },
+    "source_classification": {
+      "$ref": "#/$defs/Classification"
+    },
+    "destination_id": {
+      "minLength": 1,
+      "title": "Destination Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "execution_id",
+    "node_ids",
+    "edge_ids",
+    "event_ids",
+    "source_classification",
+    "destination_id"
+  ],
+  "title": "CapabilityPath",
+  "type": "object"
+}

@@ -1,0 +1,107 @@
+{
+  "$defs": {
+    "EffectType": {
+      "enum": [
+        "READS",
+        "SEARCHES",
+        "TRANSFORMS",
+        "CREATES",
+        "WRITES",
+        "TRANSMITS",
+        "DELEGATES",
+        "REQUIRES_APPROVAL"
+      ],
+      "title": "EffectType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "tool_id": {
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]*$",
+      "title": "Tool Id",
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    },
+    "description": {
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "input_schema": {
+      "additionalProperties": true,
+      "title": "Input Schema",
+      "type": "object"
+    },
+    "output_schema": {
+      "additionalProperties": true,
+      "title": "Output Schema",
+      "type": "object"
+    },
+    "declared_capabilities": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Declared Capabilities",
+      "type": "array"
+    },
+    "declared_effects": {
+      "items": {
+        "$ref": "#/$defs/EffectType"
+      },
+      "title": "Declared Effects",
+      "type": "array"
+    },
+    "permission_scope": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Permission Scope",
+      "type": "array"
+    },
+    "allowed_resources": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Resources",
+      "type": "array"
+    },
+    "allowed_destinations": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Destinations",
+      "type": "array"
+    },
+    "status": {
+      "default": "ACTIVE",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tool_id",
+    "name",
+    "version",
+    "description",
+    "input_schema",
+    "output_schema",
+    "declared_capabilities",
+    "declared_effects",
+    "permission_scope"
+  ],
+  "title": "ToolManifest",
+  "type": "object"
+}

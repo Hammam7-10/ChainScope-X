@@ -1,0 +1,187 @@
+{
+  "$defs": {
+    "Assessment": {
+      "enum": [
+        "CONFIRMED_VIOLATION",
+        "POTENTIAL_RISK",
+        "EFFECT_MISMATCH",
+        "INCONCLUSIVE",
+        "NO_VIOLATION_OBSERVED"
+      ],
+      "title": "Assessment",
+      "type": "string"
+    },
+    "CapabilityPath": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "node_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Node Ids",
+          "type": "array"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "event_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Event Ids",
+          "type": "array"
+        },
+        "source_classification": {
+          "$ref": "#/$defs/Classification"
+        },
+        "destination_id": {
+          "minLength": 1,
+          "title": "Destination Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_id",
+        "node_ids",
+        "edge_ids",
+        "event_ids",
+        "source_classification",
+        "destination_id"
+      ],
+      "title": "CapabilityPath",
+      "type": "object"
+    },
+    "Classification": {
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "RESTRICTED"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "CoverageStatus": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "FAILED",
+        "UNKNOWN"
+      ],
+      "title": "CoverageStatus",
+      "type": "string"
+    },
+    "Severity": {
+      "enum": [
+        "CRITICAL",
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "INFORMATIONAL"
+      ],
+      "title": "Severity",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "finding_id": {
+      "minLength": 1,
+      "title": "Finding Id",
+      "type": "string"
+    },
+    "finding_type": {
+      "minLength": 1,
+      "title": "Finding Type",
+      "type": "string"
+    },
+    "assessment": {
+      "$ref": "#/$defs/Assessment"
+    },
+    "severity": {
+      "$ref": "#/$defs/Severity"
+    },
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "tool_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tool Ids",
+      "type": "array"
+    },
+    "event_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Event Ids",
+      "type": "array"
+    },
+    "policy_rule_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Rule Id"
+    },
+    "path": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CapabilityPath"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "uncertainty": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Uncertainty",
+      "type": "array"
+    },
+    "coverage_status": {
+      "$ref": "#/$defs/CoverageStatus"
+    },
+    "status": {
+      "default": "OPEN",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "finding_id",
+    "finding_type",
+    "assessment",
+    "severity",
+    "execution_id",
+    "tool_ids",
+    "event_ids",
+    "coverage_status"
+  ],
+  "title": "Finding",
+  "type": "object"
+}

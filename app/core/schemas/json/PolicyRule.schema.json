@@ -1,0 +1,88 @@
+{
+  "$defs": {
+    "PolicyKind": {
+      "enum": [
+        "CONFIDENTIAL_TO_UNAUTHORIZED_DESTINATION",
+        "RESTRICT_ASSET_ACCESS",
+        "RESTRICT_WRITE_DESTINATION",
+        "APPROVAL_REQUIRED",
+        "PROHIBIT_DESTINATION"
+      ],
+      "title": "PolicyKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "rule_id": {
+      "minLength": 1,
+      "title": "Rule Id",
+      "type": "string"
+    },
+    "version": {
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/PolicyKind"
+    },
+    "scope": {
+      "additionalProperties": true,
+      "title": "Scope",
+      "type": "object"
+    },
+    "conditions": {
+      "additionalProperties": true,
+      "title": "Conditions",
+      "type": "object"
+    },
+    "outcome": {
+      "default": "DENY",
+      "title": "Outcome",
+      "type": "string"
+    },
+    "effective_from": {
+      "format": "date-time",
+      "title": "Effective From",
+      "type": "string"
+    },
+    "effective_to": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Effective To"
+    },
+    "evidence_requirements": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Requirements",
+      "type": "array"
+    },
+    "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "rule_id",
+    "version",
+    "kind",
+    "scope",
+    "conditions",
+    "effective_from",
+    "evidence_requirements"
+  ],
+  "title": "PolicyRule",
+  "type": "object"
+}
