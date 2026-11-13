@@ -1,0 +1,41 @@
+ChainScope X — تسليم المرحلة R5
+التاريخ: 2026-11-14
+
+الحالة والقرار المطلوب
+
+اكتمل تنفيذ نطاق R5 backend/persistence المفوض على الفرع r5-backend-persistence. commit التنفيذ: 523da9abe445b79bde2e605a00b57e2e1a5fe060. الفرع مبني مباشرة على main عند d54c4f820ccb6fa8b0de1742fa2dfb717893922f. main ووسم r4-checkpoint (ea89f86c8fc5483280d502ac2958fd6b3967d63f) لم يتغيرا. لم يُدمج أي شيء. المطلوب مراجعة مدير المشروع واعتماد R5؛ لا تبدأ R6–R11 أو الواجهة/Dashboard أو اختبار الجهاز اللوحي دون تفويض منفصل.
+
+ملخص التنفيذ
+
+- أضيفت طبقة persistence تربط R4 LangGraph/R2/R3 بـPostgreSQL وMongoDB؛ R3 AnalysisService هو مصدر الحكم الأمني الوحيد.
+- PostgreSQL عبر SQLAlchemy async/asyncpg يخزن analysis runs والنتائج والـfindings ومراجع الأدلة وروابط finding-evidence وmetadata السياسات. migration Alembic صريحة revision 20261114_01 مع FK/unique/check constraints والفهارس؛ التطبيق لا ينشئ المخطط تلقائيًا.
+- MongoDB Async يخزن execution_events وevidence_documents بهويات ثابتة وupserts قابلة لإعادة المحاولة. عند الفشل الجزئي يبقى PERSISTENCE_PENDING مع retry snapshot في PostgreSQL، ويعيد endpoint reconcile الكتابة بأمان؛ لا ندعي معاملة موزعة.
+- API المحلية تشمل health/dependencies وبدء التحليل واسترجاع التشغيل/النتائج/الأحداث/الأدلة والمصالحة، وفهرسة/إلغاء/بحث السياسات عبر Chroma.
+- مسارات فهرسة السياسات محصورة تحت مجلد السياسات المعتمد. حالات INDEXING_PENDING وDEACTIVATION_PENDING تمنع التحليل والبحث حتى استقرار التحديث. الوثائق OBSOLETE تستبعد من retrieval ومن قواعد R3، وتُعاد فرض حالتها بعد مزامنة المصدر.
+- نص الاستعلام لا يخزن؛ يبقى digest SHA-256 وطول النص فقط. تُزال مقتطفات RAG من التقرير الدائم، وتُتحقق بصمة كل دليل قبل تخزينه.
+
+التحقق
+
+- الأمر: HF_HUB_OFFLINE=1 .venv/bin/python -m pytest -q
+- النتيجة النهائية: 98 passed, 1 skipped.
+- الاختبار المتخطى هو اختبار التكامل الحي لـPostgreSQL/Mongo بسبب غياب خوادم قواعد بيانات وDSNs اختبارية في البيئة. الاختبارات المحلية تستخدم SQLite in-memory وMongo test doubles، وتشمل تدفق LangGraph/R2/R3 حقيقيًا في mock. لا يُعرض ذلك كاختبار اتصال حقيقي بالخدمتين.
+- نجح compileall لـapp/tests/alembic وpip check بلا تعارض، ونجح إخراج SQL للـmigration عبر Alembic offline وgit diff --check.
+- لا توجد credentials في ملفات المشروع أو .env.example؛ .env الحقيقي و.venv وChroma/model cache مستثناة من Git.
+
+إعادة التشغيل على مضيف تطوير موثوق
+
+1. ثبّت المتطلبات داخل virtualenv: python -m pip install -r requirements-dev.txt
+2. أنشئ قواعد تطوير PostgreSQL وMongoDB معزولة، وضع DSNs في مدير أسرار محلي أو environment فقط: CHAIN_SCOPE_POSTGRES_DSN وCHAIN_SCOPE_MONGODB_URI وCHAIN_SCOPE_MONGODB_DATABASE. لا تضع قيماً فعلية في Git أو في ملف handoff.
+3. طبّق migration يدويًا: alembic upgrade head
+4. شغّل الواجهة محليًا فقط: APP_ENV=development HOST=127.0.0.1 uvicorn app.main:app --host 127.0.0.1 --port 8000
+5. للتحقق الحي اختياريًا، استخدم DSNs وقواعد بيانات مخصصة أسماؤها صراحة *_test وفق docs/R5_LOCAL_DATABASE_SETUP.md ثم شغّل HF_HUB_OFFLINE=1 .venv/bin/python -m pytest -q tests/test_r5_live_databases.py. لا تشغّل الاختبار على قواعد تطوير/إنتاج.
+
+قيود الأمان والتوافق
+
+API غير مصادق عليها، ولا تتضمن هوية أو صلاحيات أو multi-tenancy أو rate limiting؛ تفحص APP_ENV وHOST وpeer loopback وترفض الاتصالات البعيدة، ولا تدعم reverse proxy. لا تربطها بـLAN أو الإنترنت. /health liveness فقط. لا يوجد Dashboard/UI أو تكامل بأدوات حقيقية أو تشغيل علاجي.
+
+التطوير والتحقق تمّا على Linux ARM64/Python 3.12.3. Samsung Galaxy Tab S7+ / Debian PRoot وPython 3.13.5 لم تُختبر، ولا يفترض المشروع وجود Docker أو systemd أو mongod داخل PRoot. لم يُشغّل PostgreSQL/Mongo server ولم تُثبت حزم نظام.
+
+المراجع: docs/PHASE_REPORTS/R5.md، docs/R5_BACKEND_SPEC.md، docs/R5_LOCAL_DATABASE_SETUP.md، docs/API_CONTRACTS.md، docs/DATABASE_SCHEMA.md، docs/PROJECT_STATE.md.
+
+انتظار اعتماد المدير على R5. لا دمج إلى main ولا بدء أي مرحلة جديدة قبل الموافقة الصريحة.
