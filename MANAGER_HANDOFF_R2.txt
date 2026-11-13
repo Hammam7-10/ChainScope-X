@@ -1,0 +1,57 @@
+CHAIN SCOPE X — MANAGER HANDOFF
+PHASE R2: CONTROLLED TOOL LABORATORY AND EFFECT INSTRUMENTATION
+Date: 2026-11-13
+Status: R2 implementation complete; awaiting Project Director review. R3 and later remain NOT AUTHORIZED.
+
+1. PRE-IMPLEMENTATION AUDIT
+Verified branch main and clean tree at R1 finalization commit 5f8d8ff9692d47460913bfaf313f70b2f3268ee9. Confirmed accepted R0 baseline 919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e, R1 implementation checkpoint 99301b308c8509509b57f85fa48888dbde7daa42, R0/R1 recovery files and their checksums. Reviewed R1 Pydantic contracts, JSON Schema exports, app/tests, and local Python/package compatibility before editing. No R0/R1 source, semantics, or schema was changed.
+
+2. IMPLEMENTED TOOLS
+All six tools perform deterministic operations against controlled synthetic resources:
+- Document Reader: reads a registered asset or selected fields.
+- Database Search: filters synthetic rows using the caller's query and limit.
+- Data Transformer / Report Generator: creates a report object/file with source lineage and highest-input classification.
+- File Creator: validates a name and creates a controlled file resource.
+- Workspace Storage: stores files in the simulated internal workspace.
+- File Sharing / Controlled Output: routes files only to fixed simulated internal/external destinations.
+
+3. REGISTRY AND EXECUTION
+A static allowlist accepts exactly the six approved implementation classes. It rejects duplicate/unknown tools, invalid manifests and unsupported schema definitions; validates inputs and output shapes; and exposes stable implementation references. The runner separates executions, invocations and effects, assigns unique IDs, and uses ordered, timezone-aware event sequences.
+
+4. INSTRUMENTATION AND EVIDENCE
+All resource adapters share the effect recorder. Events retain R1 effect enums, identity, operation, source/destination, classification, outcome and resolving evidence. Canonical sanitized event facts receive local SHA-256 digests. Recorder or evidence-store failure fails closed; staged writes/deliveries roll back and coverage is FAILED. Raw content, query text, filenames and untrusted resource/tool identifiers are excluded or normalized before entering evidence.
+
+5. ACTUAL EVENT EXAMPLE
+One reproducible in-memory Document Reader run produced:
+  event_id=event:8f1f2eef61f443f2b6503bcca2c033a4
+  execution_id=execution:2be7510c2958455d8bf8b0dd83c2c35f
+  invocation_id=invocation:fcbc4637e88b43268395870c0df6c348
+  tool_id=document-reader; sequence=1; effect=READS; outcome=SUCCESS
+  source=asset:public:handbook; classification=PUBLIC; coverage=COMPLETE
+  evidence_id=evidence:fcdfda4604f24fe88b293cbf8d06ee04
+  evidence_sha256=07522d6dcae1835598faff062075316cc016ea52ef29116152da688751cc12f0
+The evidence reference resolved and its digest verified in that run. Run state is process-local and not persisted; these are synthetic values.
+
+6. COVERAGE AND LINEAGE
+Uses the unchanged R1 COMPLETE/PARTIAL/FAILED/UNKNOWN contract, bounded to seven explicitly declared synthetic adapter interfaces. Tests cover all four states, self-check/evidence resolution and recorder failure. Multi-input report transformation preserves all source IDs and inherits the highest classification; no declassification is supported.
+
+7. ADVERSARIAL FIXTURE
+Normal Workspace Storage records internal read/write only. The opt-in fixture additionally records a TRANSMITS event and copy to the fixed simulated external in-memory sink. The manifest remains unchanged. No mismatch/maliciousness verdict is made and no real transmission occurs.
+
+8. FILES CREATED AND UPDATED
+Added runtime modules: app/effects/evidence_store.py, app/effects/recorder.py, app/sandbox/resources.py, app/sandbox/runner.py, app/tools/lab_tools.py, app/tools/registry.py; tests/test_tool_lab.py; docs/TOOL_LAB_SPEC.md, docs/EFFECT_INSTRUMENTATION.md, docs/SYNTHETIC_FIXTURES.md, docs/PHASE_REPORTS/R2.md. Updated docs/PROJECT_STATE.md, docs/DECISION_LOG.md and docs/IMPLEMENTATION_PLAN.md. This handoff is the single consolidated user-facing report.
+
+9. TESTS AND VERIFICATION
+Focused R2: 24 passed, 0 failed. Full suite: `python3 -m unittest discover -s tests -v` — 39 passed, 0 failed (3 R0, 12 R1, 24 R2). `python3 -m compileall -q app tests` passed. All 10 exported R1 JSON Schema snapshots parsed; no schema files changed. Tests include actual tool operations/query filtering, evidence provenance and digest validation, failure rollback, redaction, classification/lineage, all coverage states, and normal/adversarial destination behavior. Socket construction is blocked in local-destination tests; R2 runtime has no process, filesystem, or network transport primitive.
+
+10. ENVIRONMENT AND DEPENDENCIES
+Linux ARM64 (aarch64), Python 3.12.3, Git 2.43.0, Pydantic 2.14.2, FastAPI 0.162.0. `unittest` and existing installed dependencies were used; no package was installed or changed. No database or external service was used.
+
+11. GIT AND RECOVERY
+R2 implementation checkpoint: 4e5378efba17961e640f3519511550cddbb62e76 (branch main; preserves all accepted history). R0/R1 artifacts were not overwritten and their checksums passed again. Final delivery uses separate R2 files: `chainscope-x-R2-source.zip`, `chainscope-x-R2-history.bundle`, and `chainscope-x-R2-checksums.txt` in `/home/ubuntu/Downloads/`. The working tree was verified clean after committing this handoff and before packaging. No remote push was made.
+
+12. LIMITATIONS AND DECISIONS
+State is ephemeral and process-local. The six tools are trusted static code, not a hostile-code OS sandbox; COMPLETE is not OS-wide monitoring. No persistence, API for lab runs, mismatch analysis, graph, policy engine, findings, remediation, RAG, LLM, or third-party tools are included. No blocking design decision is required for R2. Prior open issues remain: confirm the academic SQL/NoSQL rubric and perform tablet compatibility checks when the tablet is available.
+
+13. RECOMMENDED NEXT STEP
+Project Director reviews and accepts R2. Stop here. R3 may begin only after separate explicit authorization; do not infer approval from this handoff.

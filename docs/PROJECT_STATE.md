@@ -6,7 +6,7 @@
 
 ## Verified baseline and recovery
 
-Project: `/home/ubuntu/chainscope-x`, branch `main`. The R2 pre-implementation audit found a clean tree at R1 finalization commit `5f8d8ff9692d47460913bfaf313f70b2f3268ee9`. The accepted R0 baseline is `919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e`; the R1 implementation checkpoint is `99301b308c8509509b57f85fa48888dbde7daa42`; R1 final handoff commit is `5f8d8ff9692d47460913bfaf313f70b2f3268ee9`. R0 and R1 ZIP/bundle/checksum files were present, and all four ZIP/bundle SHA-256 entries passed before R2 changes. No R0/R1 source, exported schema, or history was rewritten.
+Project: `/home/ubuntu/chainscope-x`, branch `main`. The R2 pre-implementation audit found a clean tree at R1 finalization commit `5f8d8ff9692d47460913bfaf313f70b2f3268ee9`. The accepted R0 baseline is `919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e`; the R1 implementation checkpoint is `99301b308c8509509b57f85fa48888dbde7daa42`; R1 final handoff commit is `5f8d8ff9692d47460913bfaf313f70b2f3268ee9`. R2 implementation checkpoint (before the consolidated handoff file): `4e5378efba17961e640f3519511550cddbb62e76`. R0 and R1 ZIP/bundle/checksum files were present, and all four ZIP/bundle SHA-256 entries passed before R2 changes. No R0/R1 source, exported schema, or history was rewritten.
 
 R2 audit environment: Linux ARM64 (`aarch64`), Python 3.12.3, Git 2.43.0, Pydantic 2.14.2 and FastAPI 0.162.0 already installed. Pytest, JSON Schema validator, and HTTPX were absent. R2 uses the standard library plus the existing Pydantic v2 contracts; no package was installed and no external service or network connection was used. Tablet compatibility remains unverified.
 
