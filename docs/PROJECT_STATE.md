@@ -1,36 +1,35 @@
-# Project State — ChainScope X
+# حالة المشروع — ChainScope X
 
-**Current phase:** R2 — Controlled Tool Laboratory and Effect Instrumentation
-**Status:** R2 implementation and full unit suite passed; awaiting Project Director review. R3 is not authorized.
-**Last updated:** 2026-11-13
+**المرحلة الحالية:** R3 — محرك تحليل أمني موحد وحتمي
+**الحالة:** R0 وR1 وR2 مقبولة؛ R3 منفذة ومختبرة وتنتظر مراجعة مدير المشروع. R4 وما بعدها غير مصرح بها.
+**آخر تحديث:** 2026-11-13
 
-## Verified baseline and recovery
+## أساس المشروع والاستعادة
 
-Project: `/home/ubuntu/chainscope-x`, branch `main`. The R2 pre-implementation audit found a clean tree at R1 finalization commit `5f8d8ff9692d47460913bfaf313f70b2f3268ee9`. The accepted R0 baseline is `919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e`; the R1 implementation checkpoint is `99301b308c8509509b57f85fa48888dbde7daa42`; R1 final handoff commit is `5f8d8ff9692d47460913bfaf313f70b2f3268ee9`. R2 implementation checkpoint (before the consolidated handoff file): `4e5378efba17961e640f3519511550cddbb62e76`. R0 and R1 ZIP/bundle/checksum files were present, and all four ZIP/bundle SHA-256 entries passed before R2 changes. No R0/R1 source, exported schema, or history was rewritten.
+المشروع في `/home/ubuntu/chainscope-x` على فرع `main`. فحص ما قبل R3 أكد الفرع `main` وشجرة نظيفة عند R2 final commit `9872cb8` (عنوانه `Add R2 manager handoff`). نقاط التاريخ المقبولة السابقة محفوظة: R0 `919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e`، R1 implementation `99301b308c8509509b57f85fa48888dbde7daa42`، R1 finalization `5f8d8ff9692d47460913bfaf313f70b2f3268ee9`، ونقطة R2 قبل ملف التسليم `4e5378efba17961e640f3519511550cddbb62e76`. لم يُعد إنشاء المشروع أو تغيير التاريخ المقبول. حزم استعادة R0/R1/R2 السابقة لم تُستبدل.
 
-R2 audit environment: Linux ARM64 (`aarch64`), Python 3.12.3, Git 2.43.0, Pydantic 2.14.2 and FastAPI 0.162.0 already installed. Pytest, JSON Schema validator, and HTTPX were absent. R2 uses the standard library plus the existing Pydantic v2 contracts; no package was installed and no external service or network connection was used. Tablet compatibility remains unverified.
+البيئة التي ثبت تشغيلها: Linux ARM64 (`aarch64`)، Python 3.12.3، Git 2.43.0، Pydantic 2.14.2، وFastAPI 0.162.0 موجودان مسبقًا. لم تُثبت اعتمادات جديدة. R3 لا يستخدم قاعدة بيانات أو خدمة شبكة أو LLM.
 
-## R2 delivered scope
+## النطاق المنجز
 
-Implemented a static allowlisted registry and six deterministic synthetic tools: Document Reader, Database Search, Data Transformer/Report Generator, File Creator, Workspace Storage, and File Sharing/Controlled Output. Each operation routes through a bounded in-memory adapter and a shared effect recorder. Unique execution and invocation IDs, ordered timezone-aware events, local evidence records with canonical SHA-256 digests, safe allowlisted metadata, classification propagation, source lineage, and explicit R1 coverage records are implemented.
+R3 يستهلك تقرير تنفيذ R2 واحدًا مع manifests وسياسات R1 ومخزن الأدلة المحلي. أُضيف `AnalysisService`، ومقارن الآثار، ورسم القدرات والمسارات، ومقيم السياسات المنظمة، ومولد findings المرتبطة بالأدلة. تُبنى الحواف من أحداث R2 ومواردها ونسبها فقط، ويُحترم حد التنفيذ والتغطية. لا يُفترض أن كل وجهة خارجية ممنوعة؛ الإرسال الحساس بلا قاعدة تفصل التصريح ينتج خطرًا للمراجعة لا مخالفة مؤكدة.
 
-Fixtures include PUBLIC, INTERNAL, CONFIDENTIAL, and RESTRICTED synthetic assets; a searchable in-memory dataset; an internal workspace; and internal/external simulated sinks. The external sink is strictly local/in-memory. The optional adversarial storage fixture makes the storage tool write internally and additionally produce one instrumented TRANSMITS event to the simulated external sink; declared manifest effects remain separate and unchanged. No mismatch detection is implemented.
+امتدادات العقود إضافية ومتوافقة: `optional_effects` في `ToolManifest`، و`GraphEdge.invocation_ids`، ومراجع evidence الاختيارية في `Finding`، ومخططات R3 للنتائج والفروق وتقييم السياسة. أضيفت قيمة `EffectType.USES` لدلالات حواف الرسم المطلوبة، مع إبقاء جميع قيم R1 السابقة وعدم تغيير أنواع الأحداث التي يصدرها R2. لم تُحذف حقول أو تتغير سجلات R0/R1/R2 القائمة.
 
-R2 uses the existing R1 effect names (`READS`, `SEARCHES`, `TRANSFORMS`, `CREATES`, `WRITES`, `TRANSMITS`) and coverage statuses. No R1 contract fields, enum values, or JSON Schema snapshots changed. Execution records, events, evidence, fixture stores, and coverage are in-memory and process-local, not PostgreSQL persistence.
+## أدلة التحقق
 
-## Test evidence
+آخر تشغيل كامل: `python3 -m unittest discover -s tests -v` — **64 نجاحًا، 0 فشل**: 3 R0، و12 R1، و24 R2، و25 R3. نجح `python3 -m compileall -q app tests`. أُعيد تصدير **13** مخطط JSON Schema وفُحصت جميعها كـJSON صالح. اجتازت `git diff --check` بعد جميع تغييرات الكود والوثائق.
 
-Latest full-suite run: `python3 -m unittest discover -s tests -v` — **39 passed, 0 failed** (3 R0 foundation, 12 R1 contract, 24 R2 tool-lab tests). `python3 -m compileall -q app tests` passed. All 10 exported R1 JSON Schema snapshots parse as valid JSON. R2 tests exercised six tools, actual query filtering, event provenance/sequence/timezone, evidence resolution and digest verification, failed operation outcomes, recorder/evidence-store failure and staged-write rollback, input-identifier redaction, COMPLETE/PARTIAL/FAILED/UNKNOWN coverage, conservative multi-input classification and lineage, and the simulated adversarial extra copy. Socket construction was patched to fail in local-destination scenarios; no network path exists in the adapters.
+اختبارات R3 تغطي السيناريوهات A–H، ومصفوفة العمليات المسموح بها للأدوات الست، وفروق الآثار، والأثر المتوقع تحت التغطية الكاملة والجزئية، والآثار الاختيارية والفشل، والوجهة الخارجية، وترابط المصادر/الحواف/الأدلة، ورفض invocation IDs الملتبسة، والتحقق من الحدث/المسار/evidence عند تأكيد السياسة، ومتطلبات التغطية والموافقة، والسياسات الفارغة أو المكررة، والتصنيف، ونقص النسب، ومنع مسارات عابرة للتنفيذ، وتوقف اجتياز الدورات. تُحظر فتحات الشبكة أثناء اختبار الوجهة المحاكاة.
 
-## Boundaries and open limitations
+## الحدود المفتوحة
 
-- Coverage `COMPLETE` is only for a declared, tested set of R2 synthetic adapter interfaces; this is not OS-wide, arbitrary-software, or real external-tool monitoring.
-- Registry validation implements the bounded JSON Schema subset used by the static manifests; there is no dynamic plugin support.
-- All runtime data is ephemeral in-memory state. No PostgreSQL/Supabase persistence, database migrations, user-facing API for lab runs, or durable evidence store is included.
-- R2 does not perform declared-versus-observed mismatch detection, graph construction/traversal, policy evaluation, findings, remediation, counterfactual verification, RAG, LLM, or third-party tool execution.
-- The controlled environment is designed around trusted fixed Python implementations; it is not a general hostile-code OS sandbox.
-- Academic SQL/NoSQL interpretation and tablet compatibility remain unresolved from earlier phases.
+- `COMPLETE` محصور بالواجهات الاصطناعية المصرح برصدها في R2؛ ليس مراقبة نظام التشغيل أو أدوات اعتباطية.
+- السجلات والأدلة والمختبر in-memory وعابرة للعملية؛ لا يوجد تخزين دائم أو ترحيل قاعدة بيانات أو API إنتاجية.
+- لا يمكن تأكيد غياب موافقة ما لم تُضف واجهة مراقبة موافقات صريحة ويُعتمد نطاقها؛ نقص هذه الواجهة يؤدي إلى عدم حسم.
+- نقص النسب أو سلامة الأدلة يمنع استنتاج مسارات غير مسجلة. حدود الرسم الحالية 16 مستوى و512 مسارًا.
+- التوافق مع الجهاز اللوحي، ومتطلبات SQL/NoSQL الأكاديمية غير المحسومة، والاختبارات الإنتاجية خارج النطاق.
 
-## Next action and phase gate
+## بوابة المرحلة
 
-Submit `MANAGER_HANDOFF_R2.txt` for Project Director review. Stop after this handoff. Do not begin R3 or any later phase until explicit Project Director authorization.
+ارسل ملف `MANAGER_HANDOFF_R3.txt` الواحد إلى مدير المشروع وانتظر المراجعة. **توقف بعد تسليم R3؛ لا تبدأ R4 أو أي مرحلة لاحقة** حتى يصدر تفويض صريح جديد.

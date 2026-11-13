@@ -1,0 +1,721 @@
+{
+  "$defs": {
+    "AnalysisStatus": {
+      "enum": [
+        "CONFIRMED_VIOLATION",
+        "POTENTIAL_RISK",
+        "INCONCLUSIVE",
+        "NO_VIOLATION_OBSERVED_WITHIN_COMPLETE_SCOPE"
+      ],
+      "title": "AnalysisStatus",
+      "type": "string"
+    },
+    "Assessment": {
+      "enum": [
+        "CONFIRMED_VIOLATION",
+        "POTENTIAL_RISK",
+        "EFFECT_MISMATCH",
+        "INCONCLUSIVE",
+        "NO_VIOLATION_OBSERVED"
+      ],
+      "title": "Assessment",
+      "type": "string"
+    },
+    "CapabilityPath": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "node_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Node Ids",
+          "type": "array"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "event_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Event Ids",
+          "type": "array"
+        },
+        "source_classification": {
+          "$ref": "#/$defs/Classification"
+        },
+        "destination_id": {
+          "minLength": 1,
+          "title": "Destination Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_id",
+        "node_ids",
+        "edge_ids",
+        "event_ids",
+        "source_classification",
+        "destination_id"
+      ],
+      "title": "CapabilityPath",
+      "type": "object"
+    },
+    "Classification": {
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "RESTRICTED"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "CoverageStatus": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "FAILED",
+        "UNKNOWN"
+      ],
+      "title": "CoverageStatus",
+      "type": "string"
+    },
+    "EffectMismatch": {
+      "additionalProperties": false,
+      "properties": {
+        "mismatch_id": {
+          "minLength": 1,
+          "title": "Mismatch Id",
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/$defs/MismatchCategory"
+        },
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "tool_id": {
+          "minLength": 1,
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "invocation_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Invocation Ids",
+          "type": "array"
+        },
+        "event_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Event Ids",
+          "type": "array"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "expected_effect": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EffectType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "observed_effect": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EffectType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "resource_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Resource Ids",
+          "type": "array"
+        },
+        "destination_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Destination Ids",
+          "type": "array"
+        },
+        "assessment": {
+          "$ref": "#/$defs/Assessment"
+        },
+        "coverage_status": {
+          "$ref": "#/$defs/CoverageStatus"
+        },
+        "explanation": {
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mismatch_id",
+        "category",
+        "execution_id",
+        "tool_id",
+        "assessment",
+        "coverage_status",
+        "explanation"
+      ],
+      "title": "EffectMismatch",
+      "type": "object"
+    },
+    "EffectType": {
+      "enum": [
+        "READS",
+        "SEARCHES",
+        "TRANSFORMS",
+        "USES",
+        "CREATES",
+        "WRITES",
+        "TRANSMITS",
+        "DELEGATES",
+        "REQUIRES_APPROVAL"
+      ],
+      "title": "EffectType",
+      "type": "string"
+    },
+    "EvidenceReference": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": {
+          "minLength": 1,
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Recorder, fixture, or immutable artifact type",
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uri"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "llm_generated": {
+          "default": false,
+          "title": "Llm Generated",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "kind",
+        "recorded_at"
+      ],
+      "title": "EvidenceReference",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "finding_id": {
+          "minLength": 1,
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "finding_type": {
+          "minLength": 1,
+          "title": "Finding Type",
+          "type": "string"
+        },
+        "assessment": {
+          "$ref": "#/$defs/Assessment"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "tool_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tool Ids",
+          "type": "array"
+        },
+        "event_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Event Ids",
+          "type": "array"
+        },
+        "policy_rule_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Policy Rule Id"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CapabilityPath"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "uncertainty": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Uncertainty",
+          "type": "array"
+        },
+        "coverage_status": {
+          "$ref": "#/$defs/CoverageStatus"
+        },
+        "status": {
+          "default": "OPEN",
+          "title": "Status",
+          "type": "string"
+        },
+        "summary": {
+          "default": "",
+          "title": "Summary",
+          "type": "string"
+        },
+        "invocation_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Invocation Ids",
+          "type": "array"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "evidence_references": {
+          "items": {
+            "$ref": "#/$defs/EvidenceReference"
+          },
+          "title": "Evidence References",
+          "type": "array"
+        },
+        "policy_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Policy Version"
+        },
+        "severity_rationale": {
+          "default": "",
+          "title": "Severity Rationale",
+          "type": "string"
+        },
+        "next_investigative_action": {
+          "default": "",
+          "title": "Next Investigative Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "finding_id",
+        "finding_type",
+        "assessment",
+        "severity",
+        "execution_id",
+        "tool_ids",
+        "event_ids",
+        "coverage_status"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "GraphEdge": {
+      "additionalProperties": false,
+      "properties": {
+        "edge_id": {
+          "minLength": 1,
+          "title": "Edge Id",
+          "type": "string"
+        },
+        "source_node_id": {
+          "minLength": 1,
+          "title": "Source Node Id",
+          "type": "string"
+        },
+        "target_node_id": {
+          "minLength": 1,
+          "title": "Target Node Id",
+          "type": "string"
+        },
+        "edge_type": {
+          "$ref": "#/$defs/EffectType"
+        },
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "event_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Event Ids",
+          "type": "array"
+        },
+        "classification": {
+          "$ref": "#/$defs/Classification"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "invocation_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Invocation Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "edge_id",
+        "source_node_id",
+        "target_node_id",
+        "edge_type",
+        "execution_id",
+        "event_ids",
+        "classification",
+        "evidence_ids"
+      ],
+      "title": "GraphEdge",
+      "type": "object"
+    },
+    "GraphNode": {
+      "additionalProperties": false,
+      "properties": {
+        "node_id": {
+          "minLength": 1,
+          "title": "Node Id",
+          "type": "string"
+        },
+        "node_type": {
+          "pattern": "^(TOOL|ASSET|TRANSFORMATION|DESTINATION|POLICY|EXECUTION)$",
+          "title": "Node Type",
+          "type": "string"
+        },
+        "resource_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Id"
+        },
+        "execution_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execution Id"
+        },
+        "classification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Classification"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "node_id",
+        "node_type"
+      ],
+      "title": "GraphNode",
+      "type": "object"
+    },
+    "MismatchCategory": {
+      "enum": [
+        "UNDECLARED_OBSERVED_EFFECT",
+        "EXPECTED_EFFECT_NOT_OBSERVED",
+        "UNEXPECTED_RESOURCE_OR_DESTINATION",
+        "UNEXPECTED_OPERATION",
+        "INCOMPLETE_COMPARISON"
+      ],
+      "title": "MismatchCategory",
+      "type": "string"
+    },
+    "PolicyApplicability": {
+      "enum": [
+        "APPLICABLE",
+        "INACTIVE",
+        "NOT_YET_EFFECTIVE",
+        "EXPIRED",
+        "OUT_OF_SCOPE",
+        "UNSUPPORTED_RULE"
+      ],
+      "title": "PolicyApplicability",
+      "type": "string"
+    },
+    "PolicyDecision": {
+      "enum": [
+        "ALLOW",
+        "DENY",
+        "REQUIRE_APPROVAL",
+        "NOT_APPLICABLE",
+        "INCONCLUSIVE"
+      ],
+      "title": "PolicyDecision",
+      "type": "string"
+    },
+    "PolicyEvaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "policy_rule_id": {
+          "minLength": 1,
+          "title": "Policy Rule Id",
+          "type": "string"
+        },
+        "policy_version": {
+          "minLength": 1,
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "applicability": {
+          "$ref": "#/$defs/PolicyApplicability"
+        },
+        "decision": {
+          "$ref": "#/$defs/PolicyDecision"
+        },
+        "event_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Event Ids",
+          "type": "array"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CapabilityPath"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "explanation": {
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_rule_id",
+        "policy_version",
+        "applicability",
+        "decision",
+        "explanation"
+      ],
+      "title": "PolicyEvaluation",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "CRITICAL",
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "INFORMATIONAL"
+      ],
+      "title": "Severity",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/AnalysisStatus"
+    },
+    "coverage_status": {
+      "$ref": "#/$defs/CoverageStatus"
+    },
+    "monitored_scope": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Monitored Scope",
+      "type": "array"
+    },
+    "mismatches": {
+      "items": {
+        "$ref": "#/$defs/EffectMismatch"
+      },
+      "title": "Mismatches",
+      "type": "array"
+    },
+    "graph_nodes": {
+      "items": {
+        "$ref": "#/$defs/GraphNode"
+      },
+      "title": "Graph Nodes",
+      "type": "array"
+    },
+    "graph_edges": {
+      "items": {
+        "$ref": "#/$defs/GraphEdge"
+      },
+      "title": "Graph Edges",
+      "type": "array"
+    },
+    "paths": {
+      "items": {
+        "$ref": "#/$defs/CapabilityPath"
+      },
+      "title": "Paths",
+      "type": "array"
+    },
+    "policy_evaluations": {
+      "items": {
+        "$ref": "#/$defs/PolicyEvaluation"
+      },
+      "title": "Policy Evaluations",
+      "type": "array"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "incomplete_reasons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Incomplete Reasons",
+      "type": "array"
+    },
+    "assessed_at": {
+      "format": "date-time",
+      "title": "Assessed At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "execution_id",
+    "status",
+    "coverage_status",
+    "assessed_at"
+  ],
+  "title": "AnalysisResult",
+  "type": "object"
+}

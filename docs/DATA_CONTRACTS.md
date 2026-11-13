@@ -13,6 +13,10 @@ The source-of-truth validation models live in `app/core/schemas/contracts.py` an
 7. VERIFIED remediation status requires at least one verification run ID; verification records themselves need execution IDs and evidence IDs.
 8. Unknown fields are rejected; timestamps are timezone-aware by contract intention and should be UTC at ingestion.
 
+## R3 additive graph-edge semantic
+
+R3 adds the existing graph relationship value `USES` to the shared `EffectType` enum because `GraphEdge.edge_type` already uses that contract and R1 lineage semantics require explicit `USES` edges. This is additive: no prior enum value or observed R2 event was changed, and the six R2 adapters continue emitting only their established event effects. `GraphEdge.invocation_ids` is likewise an optional additive field with an empty default for older records.
+
 ## JSON Schema generation
 JSON schemas use the JSON Schema dialect emitted by Pydantic. Enum sets and required fields are machine readable. Cross-record invariants—such as edge endpoints existing in the same graph, policy applicability, or event IDs actually existing in a database—cannot be established by a single JSON Schema and must be enforced by service/database logic and integration tests.
 

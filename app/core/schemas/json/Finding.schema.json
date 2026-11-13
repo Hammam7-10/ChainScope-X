@@ -83,6 +83,64 @@
       "title": "CoverageStatus",
       "type": "string"
     },
+    "EvidenceReference": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": {
+          "minLength": 1,
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Recorder, fixture, or immutable artifact type",
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uri"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "llm_generated": {
+          "default": false,
+          "title": "Llm Generated",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "kind",
+        "recorded_at"
+      ],
+      "title": "EvidenceReference",
+      "type": "object"
+    },
     "Severity": {
       "enum": [
         "CRITICAL",
@@ -169,6 +227,54 @@
     "status": {
       "default": "OPEN",
       "title": "Status",
+      "type": "string"
+    },
+    "summary": {
+      "default": "",
+      "title": "Summary",
+      "type": "string"
+    },
+    "invocation_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Invocation Ids",
+      "type": "array"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "evidence_references": {
+      "items": {
+        "$ref": "#/$defs/EvidenceReference"
+      },
+      "title": "Evidence References",
+      "type": "array"
+    },
+    "policy_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Version"
+    },
+    "severity_rationale": {
+      "default": "",
+      "title": "Severity Rationale",
+      "type": "string"
+    },
+    "next_investigative_action": {
+      "default": "",
+      "title": "Next Investigative Action",
       "type": "string"
     }
   },

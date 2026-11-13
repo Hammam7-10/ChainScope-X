@@ -16,6 +16,7 @@ class EffectType(StrEnum):
     READS = "READS"
     SEARCHES = "SEARCHES"
     TRANSFORMS = "TRANSFORMS"
+    USES = "USES"
     CREATES = "CREATES"
     WRITES = "WRITES"
     TRANSMITS = "TRANSMITS"
@@ -87,10 +88,17 @@ class ToolManifest(Contract):
     output_schema: dict[str, Any]
     declared_capabilities: list[str]
     declared_effects: list[EffectType]
+    optional_effects: list[EffectType] = Field(default_factory=list)
     permission_scope: list[str]
     allowed_resources: list[str] = []
     allowed_destinations: list[str] = []
     status: str = "ACTIVE"
+
+    @model_validator(mode="after")
+    def optional_effects_must_be_declared(self):
+        if not set(self.optional_effects).issubset(self.declared_effects):
+            raise ValueError("Optional effects must be a subset of declared effects")
+        return self
 
 
 class CoverageRecord(Contract):
@@ -145,6 +153,7 @@ class GraphEdge(Contract):
     event_ids: list[str] = Field(min_length=1)
     classification: Classification
     evidence_ids: list[str] = Field(min_length=1)
+    invocation_ids: list[str] = Field(default_factory=list)
 
 
 class CapabilityPath(Contract):
@@ -196,6 +205,13 @@ class Finding(Contract):
     uncertainty: list[str] = []
     coverage_status: CoverageStatus
     status: str = "OPEN"
+    summary: str = ""
+    invocation_ids: list[str] = Field(default_factory=list)
+    evidence_ids: list[str] = Field(default_factory=list)
+    evidence_references: list[EvidenceReference] = Field(default_factory=list)
+    policy_version: str | None = None
+    severity_rationale: str = ""
+    next_investigative_action: str = ""
 
     @model_validator(mode="after")
     def violation_requires_evidence_and_policy(self):

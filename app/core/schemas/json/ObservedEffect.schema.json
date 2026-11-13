@@ -15,6 +15,7 @@
         "READS",
         "SEARCHES",
         "TRANSFORMS",
+        "USES",
         "CREATES",
         "WRITES",
         "TRANSMITS",

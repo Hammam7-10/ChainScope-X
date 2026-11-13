@@ -1,0 +1,147 @@
+{
+  "$defs": {
+    "CapabilityPath": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "node_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Node Ids",
+          "type": "array"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "event_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Event Ids",
+          "type": "array"
+        },
+        "source_classification": {
+          "$ref": "#/$defs/Classification"
+        },
+        "destination_id": {
+          "minLength": 1,
+          "title": "Destination Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_id",
+        "node_ids",
+        "edge_ids",
+        "event_ids",
+        "source_classification",
+        "destination_id"
+      ],
+      "title": "CapabilityPath",
+      "type": "object"
+    },
+    "Classification": {
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "RESTRICTED"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "PolicyApplicability": {
+      "enum": [
+        "APPLICABLE",
+        "INACTIVE",
+        "NOT_YET_EFFECTIVE",
+        "EXPIRED",
+        "OUT_OF_SCOPE",
+        "UNSUPPORTED_RULE"
+      ],
+      "title": "PolicyApplicability",
+      "type": "string"
+    },
+    "PolicyDecision": {
+      "enum": [
+        "ALLOW",
+        "DENY",
+        "REQUIRE_APPROVAL",
+        "NOT_APPLICABLE",
+        "INCONCLUSIVE"
+      ],
+      "title": "PolicyDecision",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "policy_rule_id": {
+      "minLength": 1,
+      "title": "Policy Rule Id",
+      "type": "string"
+    },
+    "policy_version": {
+      "minLength": 1,
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "applicability": {
+      "$ref": "#/$defs/PolicyApplicability"
+    },
+    "decision": {
+      "$ref": "#/$defs/PolicyDecision"
+    },
+    "event_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Event Ids",
+      "type": "array"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "path": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CapabilityPath"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "explanation": {
+      "minLength": 1,
+      "title": "Explanation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_rule_id",
+    "policy_version",
+    "applicability",
+    "decision",
+    "explanation"
+  ],
+  "title": "PolicyEvaluation",
+  "type": "object"
+}

@@ -2,13 +2,15 @@
 import json
 from pathlib import Path
 
+from app.core.schemas.analysis import AnalysisResult, EffectMismatch, PolicyEvaluation
 from app.core.schemas.contracts import (
     CapabilityPath, CoverageRecord, Finding, GraphEdge, GraphNode, ObservedEffect,
     PolicyRule, RemediationCandidate, ToolManifest, VerificationRun,
 )
 
 MODELS = [ToolManifest, CoverageRecord, ObservedEffect, GraphNode, GraphEdge,
-          CapabilityPath, PolicyRule, Finding, RemediationCandidate, VerificationRun]
+          CapabilityPath, PolicyRule, Finding, RemediationCandidate, VerificationRun,
+          EffectMismatch, PolicyEvaluation, AnalysisResult]
 OUTPUT = Path(__file__).with_name("json")
 
 

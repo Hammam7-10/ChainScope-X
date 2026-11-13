@@ -5,6 +5,7 @@
         "READS",
         "SEARCHES",
         "TRANSFORMS",
+        "USES",
         "CREATES",
         "WRITES",
         "TRANSMITS",
@@ -60,6 +61,13 @@
         "$ref": "#/$defs/EffectType"
       },
       "title": "Declared Effects",
+      "type": "array"
+    },
+    "optional_effects": {
+      "items": {
+        "$ref": "#/$defs/EffectType"
+      },
+      "title": "Optional Effects",
       "type": "array"
     },
     "permission_scope": {
