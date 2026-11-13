@@ -1,19 +1,19 @@
 # ChainScope X
 
-**Effect-Aware Capability Intelligence Engine** — مشروع محلي معزول لاختبار وتحليل آثار الأدوات الاصطناعية. حالة المستودع هي R4: R0–R3 محفوظة، وR4 تضيف استرجاع سياسات محليًا، وسير LangGraph واحد، وربط سجلات R2 بمحرك R3 الحتمي. هذا مختبر تطوير واختبار، وليس منصة أمن إنتاجية.
+**Effect-Aware Capability Intelligence Engine** — مشروع محلي معزول لاختبار وتحليل آثار الأدوات الاصطناعية. يحافظ خط R0–R4 على مختبر R2 ومحرك R3 الحتمي وRAG/LangGraph؛ يضيف R5 API محليًا محدودًا مع PostgreSQL وMongoDB وعمليات مضبوطة لـChroma. هذا مختبر تطوير وأبحاث، وليس منصة أمن إنتاجية.
 
-## نطاق R4
+## ما يفعله R4/R5
 
-- ChromaDB محلي دائم في `data/chroma/` افتراضيًا، مع إمكانية تغييره عبر `CHAIN_SCOPE_CHROMA_DIR`.
-- ملفات سياسات Markdown/TXT ذات TOML front matter في `data/policies/`، قابلة للتغيير عبر `CHAIN_SCOPE_POLICY_DIR`.
-- تمثيلات embedding حقيقية محلية عبر FastEmbed/ONNX؛ لا يوجد embedding API بعيد.
-- StateGraph أساسي واحد: التحقق من الطلب ← استرجاع RAG ← فحص سجل الأدوات والسياسات ← تخطيط محدود ← تحقق حتمي ← تنفيذ أدوات R2 الست المسموحة ← تحليل R3 ← تقرير منظم.
-- خطة الأداة وحدها يمكن أن تأتي من Groq في live mode. R2 هو مصدر الأحداث والأدلة الفعلية، و`AnalysisService` في R3 هو مصدر القرار الأمني النهائي. لا تستطيع نتائج LLM استبدال تحليل R3.
-- يخزن Chroma معرفة السياسات عبر إعادة تشغيل العملية؛ أما حالة تشغيل LangGraph وسجلات المختبر والأدلة فتبقى مؤقتة داخل العملية. لا توجد PostgreSQL أو Supabase أو واجهات أعمال إنتاجية أو معالجة علاجية آلية.
+- ChromaDB محلي دائم في `data/chroma/` افتراضيًا، وملفات السياسات في `data/policies/`؛ يمكن تغيير المسارين عبر `CHAIN_SCOPE_CHROMA_DIR` و`CHAIN_SCOPE_POLICY_DIR`.
+- FastEmbed/ONNX محلي للـembeddings متعددة اللغات؛ لا يوجد embedding API بعيد.
+- LangGraph يمر عبر التحقق من الطلب ← RAG ← سجل الأدوات والسياسات ← تخطيط محدود ← تحقق حتمي ← تنفيذ الأدوات الاصطناعية الستة ← تحليل R3.
+- R3 `AnalysisService` وحده صاحب الحكم الأمني. Groq الاختياري يقتصر على اقتراح خطة؛ لا يملك صلاحية إنشاء verdict.
+- R5 يستخدم PostgreSQL للعمليات والنتائج والـfindings ومراجع الأدلة وmetadata السياسات، وMongoDB مستقلًا للأحداث والأدلة المهيكلة. Chroma قاعدة متجهات للسياسات فقط.
+- سجل التشغيل يخزن بصمة الاستعلام وطوله لا نصه، ويزيل مقتطفات السياسة من النتيجة الدائمة. أحداث وأدلة R2 المعقمة تحفظ مع provenance وبصمات SHA-256. الفشل بين PostgreSQL وMongo يظهر `PERSISTENCE_PENDING` ويمكن مصالحة upsert دون ادعاء transaction موزعة.
 
-## التثبيت والتشغيل
+## التثبيت والاختبارات
 
-Python 3.12+ موصى به. ثبّت اعتمادات التشغيل والاختبار المثبتة بالإصدارات داخل بيئة افتراضية:
+Python 3.12+ موصى به. ثبّت الاعتمادات المثبتة بالإصدارات داخل بيئة افتراضية:
 
 ```sh
 python3 -m venv .venv
@@ -22,34 +22,37 @@ python -m pip install -r requirements-dev.txt
 export FASTEMBED_CACHE_PATH="${FASTEMBED_CACHE_PATH:-$HOME/.cache/fastembed}"
 export CHAIN_SCOPE_CHROMA_DIR="${CHAIN_SCOPE_CHROMA_DIR:-$PWD/data/chroma}"
 export CHAIN_SCOPE_POLICY_DIR="${CHAIN_SCOPE_POLICY_DIR:-$PWD/data/policies}"
-python -m pytest -q
+HF_HUB_OFFLINE=1 python -m pytest -q
 ```
 
-في أول تشغيل قد يُحمّل FastEmbed أوزان `paraphrase-multilingual-MiniLM-L12-v2` المحلية (ملف الأوزان الفعلي نحو 235 MB، ومجلد cache نحو 241 MiB في التشغيل المتحقق). تُحفظ الملفات افتراضيًا خارج المستودع تحت `~/.cache/fastembed/`، ويمكن تبديل المسار بمتغير البيئة. يستخدم النموذج vectors حقيقية لاستعلامات عربية وإنجليزية؛ جودة الترتيب العملي تُراجع ضمن اختبارات R4.
+في أول تشغيل قد يُحمّل FastEmbed أوزان `paraphrase-multilingual-MiniLM-L12-v2` المحلية (نحو 235 MB أوزان، ومجلد cache نحو 241 MiB في التشغيل المتحقق). تبقى الأوزان خارج Git في `~/.cache/fastembed/`، بينما يُستثنى Chroma في `data/chroma/`.
 
-لتنفيذ حالة مختبر اصطناعية حقيقية عبر LangGraph (الوضع الافتراضي deterministic/mock):
+اختبارات R5 العادية تستخدم SQLAlchemy models/repository مع SQLite داخل الذاكرة للاختبار وfake Mongo wire interfaces؛ لا تُعد إثباتًا لخدمة PostgreSQL/Mongo حية. اختبار تكاملي اختياري على الخدمات الحقيقية موجود في `tests/test_r5_live_databases.py` ويتخطى التنفيذ إن لم تُضبط DSNs مخصصة بأسماء قواعد بيانات `*_test`. اتبع `docs/R5_LOCAL_DATABASE_SETUP.md`.
+
+## تشغيل مختبر R4 (mock افتراضي)
 
 ```sh
 python -m app.agent.cli --scenario A --query "نفّذ تحويلًا داخليًا آمنًا واحفظ التقرير في مساحة العمل." --mode mock
 python -m app.agent.cli --scenario C --query "اختبر مسار البيانات السرية إلى الوجهة الخارجية المحاكاة المحظورة." --mode mock
 ```
 
-السيناريوهات المتاحة هي A–D فقط. لا ينفّذ المختبر شبكات حقيقية أو وجهات خارجية فعلية. تستعمل السيناريوهات موارد ثابتة اصطناعية في adapters R2، ومرجع `$ref` لاختيار خرج أداة سابقة معتمدة. المخرجات JSON تتضمن سياق الاسترجاع ومصادره، وسجلات التنفيذ الفعلية، والتغطية، وتحليل R3 دون إعادة صياغة نتيجته.
+السيناريوهات A–D فقط. موارد R2 والوجهات اصطناعية؛ لا يوجد اتصال بأداة أو وجهة فعلية. Groq live يتطلب `GROQ_API_KEY` من مخزن أسرار/بيئة محلية، ولا تُحفظ المفاتيح في Git. خطة Groq تُرفض حتميًا قبل التنفيذ إذا خالفت allowlist.
 
-## وضع Groq الحي
+## R5 API المحلي
 
-يستخدم `--mode live` محول Groq مرة واحدة لاقتراح خطة JSON فقط. معرف النموذج الافتراضي القابل للتغيير هو `openai/gpt-oss-20b` عبر `GROQ_MODEL_ID`. يجب إتاحة `GROQ_API_KEY` من مخزن أسرار أو متغير بيئة محلي؛ لا تضع المفتاح في Git أو ملف إعداد متعقب. يرفض validator الخطة قبل التنفيذ إذا خالفت allowlist. الوضع mock لا يستخدم مفتاحًا ولا يمثل تحققًا من تكامل LLM حي. لم يُضبط Groq secret في بيئة التحقق الحالية، لذلك تكامل الاستدلال الحي **غير متحقق**.
-
-## تشغيل واجهة R0
-
-واجهة FastAPI الأصلية محفوظة ويمكن تشغيلها منفصلة:
+يستخدم API نفس LangGraph/R2/R3 في وضع التشغيل الدائم. جهّز PostgreSQL وMongoDB محليًا، واضبط متغيرات الاتصال خارج المستودع، ثم طبّق migration يدويًا:
 
 ```sh
-uvicorn app.main:app --host 127.0.0.1 --port 8000
+export APP_ENV=development HOST=127.0.0.1
+export CHAIN_SCOPE_POSTGRES_DSN=''
+export CHAIN_SCOPE_MONGODB_URI=''
+export CHAIN_SCOPE_MONGODB_DATABASE='chainscope_dev'
+alembic upgrade head
+APP_ENV=development HOST=127.0.0.1 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-افتح `http://127.0.0.1:8000/`، وتتوفر الصحة عبر `/health`. هذا ليس API أعمال R4 ولا يعرّض LangGraph للعامة.
+تظل قيم DSN فارغة أعلاه كموضع إدخال فقط؛ لا تضع بيانات اعتماد فعلية في ملفات متعقبة. المسارات الحالية تشمل `POST /api/v1/analysis-runs`، استرجاع التشغيل والـfindings والأحداث والأدلة، `POST .../{run_id}/reconcile`، وعمليات `POST/GET /api/v1/policies/...` للفهرسة/الإلغاء/البحث. دليل العقود في `docs/API_CONTRACTS.md`.
 
-## الاستعادة وحالة المشروع
+R5 **غير مصادق عليه**، لذا تعمل endpoints فقط في development/test مع `HOST` loopback، ولا يجوز كشفها على شبكة أو إنترنت. `/health` فحص liveness فقط؛ `/api/v1/health/dependencies` يفحص PostgreSQL وMongo عند تهيئتهما. لا توجد واجهة Dashboard أو مستخدمون أو صلاحيات أو multi-tenancy أو علاج آلي.
 
-راجع `docs/PROJECT_STATE.md` و`docs/IMPLEMENTATION_PLAN.md` و`docs/RAG_SPEC.md` و`docs/AGENT_WORKFLOW_SPEC.md` و`docs/RESTORE_GUIDE.md`. لا يحتوي Git على قاعدة Chroma أو cache النموذج. تعاد فهرسة وثائق السياسات المحلية عند إنشاء workflow؛ السجلات التنفيذية والأدلة في R2 غير دائمة.
+لا يفترض R5 وجود Docker أو systemd أو `mongod` داخل Android Debian PRoot؛ تشغيل قواعد البيانات على الجهاز اللوحي لم يُختبر. راجع `docs/R5_BACKEND_SPEC.md` و`docs/R5_LOCAL_DATABASE_SETUP.md` و`docs/PROJECT_STATE.md` قبل تشغيله.

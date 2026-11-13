@@ -6,3 +6,7 @@ fastembed==0.9.1
 langgraph==1.2.20
 groq==1.7.0
 python-dateutil==2.9.0.post0
+SQLAlchemy==2.0.41
+alembic==1.16.4
+asyncpg==0.30.0
+pymongo==4.13.2

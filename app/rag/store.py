@@ -139,6 +139,20 @@ class PolicyRAGStore:
             self.collection.delete(ids=obsolete)
         return len(obsolete)
 
+    def deactivate_document(self, document_id: str) -> tuple[int, dict[str, Any] | None]:
+        """Mark every indexed chunk obsolete so retrieval excludes it without losing provenance."""
+        if not isinstance(document_id, str) or not document_id.strip():
+            raise ValueError("Policy document ID is required")
+        rows = self.collection.get(where={"document_id": {"$eq": document_id}},
+                                   include=["metadatas"])
+        ids = list(rows.get("ids") or [])
+        metadatas = list(rows.get("metadatas") or [])
+        if not ids:
+            return 0, None
+        updated = [{**dict(metadata), "document_status": "OBSOLETE"} for metadata in metadatas]
+        self.collection.update(ids=ids, metadatas=updated)
+        return len(ids), dict(updated[0])
+
     def retrieve(self, query: str, *, clearance: Classification = Classification.INTERNAL,
                  top_k: int = 4) -> tuple[RetrievedPassage, ...]:
         if not isinstance(query, str) or not query.strip():

@@ -37,6 +37,7 @@ class AgentState(TypedDict, total=False):
     model_id: str | None
     live_model_verified: bool
     final_report: dict[str, Any]
+    inactive_policy_document_ids: list[str]
 
 
 class ChainScopeWorkflow:
@@ -124,6 +125,8 @@ class ChainScopeWorkflow:
         request = AgentRequest.model_validate(state["validated_request"])
         try:
             store = self._ensure_store()
+            for document_id in state.get("inactive_policy_document_ids", []):
+                store.deactivate_document(document_id)
             passages = store.retrieve(request.query, clearance=request.clearance, top_k=4)
         except Exception:
             return self._error(state, "rag_retrieval_failed")
@@ -142,12 +145,19 @@ class ChainScopeWorkflow:
             if len(manifests) != 6 or any(item.status != "ACTIVE" for item in manifests):
                 return self._error(state, "approved_registry_invalid")
             catalog = load_policy_catalog(self.policy_directory)
+            inactive_documents = set(state.get("inactive_policy_document_ids", []))
+            active_rules = tuple(rule for rule in catalog.rules
+                                 if catalog.source_by_rule_id.get(rule.rule_id, {}).get("document_id")
+                                 not in inactive_documents)
+            active_rule_ids = {rule.rule_id for rule in active_rules}
+            active_sources = {rule_id: source for rule_id, source in catalog.source_by_rule_id.items()
+                              if rule_id in active_rule_ids}
         except Exception:
             return self._error(state, "registry_or_policy_catalog_invalid")
         return {
             "registry_snapshot": [item.model_dump(mode="json") for item in manifests],
-            "policies": catalog.rules,
-            "policy_sources": catalog.source_by_rule_id,
+            "policies": active_rules,
+            "policy_sources": active_sources,
             "workflow_status": "READY",
         }
 
@@ -312,9 +322,12 @@ class ChainScopeWorkflow:
         }
         return {"final_report": final_report, "workflow_status": "COMPLETED"}
 
-    def invoke(self, request: AgentRequest | dict[str, Any]) -> AgentState:
+    def invoke(self, request: AgentRequest | dict[str, Any], *,
+               inactive_policy_document_ids: list[str] | tuple[str, ...] | set[str] = ()) -> AgentState:
         if isinstance(request, AgentRequest):
             payload = request.model_dump(mode="json")
         else:
             payload = dict(request)
-        return self.graph.invoke({"request": payload}, config={"recursion_limit": 24})
+        return self.graph.invoke({"request": payload,
+                                  "inactive_policy_document_ids": sorted(inactive_policy_document_ids)},
+                                 config={"recursion_limit": 24})

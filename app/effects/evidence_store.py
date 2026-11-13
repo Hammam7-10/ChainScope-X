@@ -87,3 +87,8 @@ class EvidenceStore:
     def count(self) -> int:
         with self._lock:
             return len(self._records)
+
+    def records(self) -> tuple[EvidenceRecord, ...]:
+        """Return immutable records for durable persistence; payload integrity is rechecked by callers."""
+        with self._lock:
+            return tuple(self._records[key] for key in sorted(self._records))

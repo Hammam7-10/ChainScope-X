@@ -1,31 +1,35 @@
 # حالة المشروع — ChainScope X
 
-**المرحلة الحالية:** R4 — استرجاع السياسات والتنسيق المحدود لوكلاء الأدوات
-**الحالة:** R0–R3 مقبولة ومحفوظة. R4 منفذة ومختبرة، ووسم الاستعادة `r4-checkpoint` يشير إلى commit التنفيذ `ea89f86c8fc5483280d502ac2958fd6b3967d63f` على `main`. بعد تسليم `MANAGER_HANDOFF_R4.txt` انتظر مراجعة مدير المشروع؛ R5 غير مبدوءة.
-**آخر تحديث:** 2026-11-13
+**المرحلة الحالية:** R5 — طبقة التخزين الدائم وواجهة API المحلية
+**الحالة:** R0–R4 محفوظة ومقبولة. R5 نُفذت على الفرع المنفصل `r5-backend-persistence` المبني من `main` المطابق لخط R4 (`d54c4f820ccb6fa8b0de1742fa2dfb717893922f`). اختبارات R5 كاملة محليًا ناجحة؛ بانتظار مراجعة مدير المشروع قبل أي دمج أو مرحلة جديدة.
+**آخر تحديث:** 2026-11-14
 
-## الأساس والاستعادة
+## الأساس والفروع
 
-المشروع في `/home/ubuntu/chainscope-x` على فرع `main`. آخر نقطة قبل بدء R4 هي R3 commit `9e4271d` (`Add R3 manager handoff`)، يسبقه تنفيذ R3 `944cc19`. لم يُعاد إنشاء المشروع أو تعديل تاريخ R0–R3. يظل R0 `919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e` وR1/R2 محفوظين كما في سجل Git، ولم تستبدل ملفات الاستعادة السابقة. وسم `r4-checkpoint` يشير إلى commit التنفيذ المذكور؛ يوضح `MANAGER_HANDOFF_R4.txt` artifacts الاستعادة والبصمات.
+المشروع في `/home/ubuntu/chainscope-x` على المستودع الخاص `Hammam7-10/ChainScope-X`. `main` والوسم `r4-checkpoint` محفوظان كما هما؛ لا تعديلات أو دمج لخط الأساس. فرع العمل `r5-backend-persistence` مخصص لتنفيذ R5 فقط. تقرير مدير R5: `MANAGER_HANDOFF_R5.txt`؛ تقرير المرحلة الفني: `docs/PHASE_REPORTS/R5.md`.
 
-البيئة المستهدفة **لم** تكن متاحة للاختبار. البيئة الحالية Linux `aarch64`، Python 3.12.3، Git 2.43.0، وذاكرة 11 GiB (نحو 9 GiB متاحة وقت الفحص). القسم 48 GB وفيه نحو 38 GB متاحة. استعملت أوامر الاختبار `.venv` مع الاعتمادات المثبتة؛ لم يُنفذ تثبيت حزم نظام أثناء R4. يُخزن FastEmbed cache خارج المستودع في `~/.cache/fastembed`، وبيانات Chroma افتراضيًا في `data/chroma` (كلاهما مستثنى من Git).
+## بنية R5
 
-## النطاق المنفذ
+PostgreSQL عبر SQLAlchemy async هو المخزن العلائقي لجلسات التحليل والنتائج والـfindings ومراجع الأدلة وmetadata السياسات؛ يديره migration صريح في `alembic/versions/20261114_01_r5_persistence.py`. MongoDB Async يحفظ أحداث R2 وأدلة R2 المهيكلة ذات provenance بهويات ثابتة وعمليات upsert قابلة لإعادة المحاولة. Chroma يظل فهرس vectors محليًا للسياسات.
 
-RAG محلي persistent عبر ChromaDB وFastEmbed/ONNX، مع وثائق عربية/إنجليزية وmetadata/version/hash، ومرشحات status/classification، واستشهادات ذات مصدر. StateGraph واحد يتحقق من الطلب أولًا، ثم يسترجع السياق، يفحص سجل الأدوات والسياسات، يحصل على خطة mock أو live، يتحقق منها حتميًا، ينفذ R2 الاصطناعي، يحلل عبر R3، ثم يعيد تقريرًا منظمًا. إنشاء المخزن وتحميل النموذج مؤجلان إلى عقدة RAG بعد التحقق من الطلب.
+أضيفت API تطويرية محلية إلى FastAPI؛ تنفذ R4 workflow نفسه ولا تستبدل R3. `AnalysisService` هو مصدر verdict الوحيد. تزامن الحالة عبر PostgreSQL/Mongo لا يدعي distributed transaction؛ `PERSISTENCE_PENDING` ولقطة retry تسمحان بالمصالحة. تغييرات السياسة تسجل pending قبل تغيير Chroma، وتحجب التشغيل حتى حالة مستقرة. تُستبعد وثائق `OBSOLETE` من retrieval وقواعد R3.
 
-R3 `AnalysisService` وحده صاحب النتيجة الأمنية. النموذج الحي اختياري لتوليد خطة مقترحة فقط؛ المتغير `GROQ_API_KEY` غير مضبوط في بيئة R4، لذا لم يتحقق Groq live. تصحيح R4 يفصل `EffectType` للعمليات الفعلية عن `GraphEdgeType` للعلاقات، ومنها `USES`؛ لا يحتفظ أي R2 adapter بأثر USES مستقل.
+## الخصوصية وحدود الخدمة
+
+لا يُحفظ نص query؛ يخزن digest بطول/بصمة فقط، وتزال مقتطفات سياسة RAG من التقرير الدائم. يُتحقق من بصمة evidence قبل التخزين. أسرار الاتصال لا توجد في `.env.example`، و`.gitignore` يستبعد ملفات `.env` وقواعد Chroma وبيئة `.venv`.
+
+API R5 غير مصادق عليها؛ لا هوية أو أدوار أو multi-tenancy أو Dashboard أو rate limiting. المجموعة محصورة بـ`APP_ENV=development|test` و`HOST` loopback وpeer loopback مباشر، ولا تدعم reverse proxy أو النشر العام. `/health` liveness فقط.
 
 ## أدلة التحقق
 
-آخر تشغيل كامل: `HF_HUB_OFFLINE=1 python -m pytest -q` — **88 اختبارًا ناجحًا**. اختبارات R3/R4 المحددة: **49 نجاحًا**. نجح `compileall` و`git diff --check`. استُخدم النموذج المحلي دون اتصال لإجراء الاسترجاع الحقيقي؛ 6 وثائق أصبحت 10 chunks. أعاد الاسترجاع العربي والإنجليزي الوثيقة المتوقعة أولًا، ولم يظهر مستند RESTRICTED عند clearance=PUBLIC.
+التشغيل الكامل الأخير: `HF_HUB_OFFLINE=1 .venv/bin/python -m pytest -q` — **98 passed, 1 skipped**. الاختبار الوحيد المتخطى هو اختبار PostgreSQL/Mongo الحي، لأنه لا تتوفر خوادم فعلية أو DSNs لقواعد اختبار مخصصة؛ اختبار التكامل الحقيقي جاهز اختياريًا عبر `tests/test_r5_live_databases.py`. اختبارات local SQL تستخدم SQLite in-memory واختبارات Mongo adapter doubles؛ كما اختُبر مسار LangGraph/R2/R3 الحقيقي في mock.
 
-نجحت سيناريوهات المختبر A–D مع النتائج المحددة في `docs/PHASE_REPORTS/R4.md`. CLI للسيناريو C في mock أعاد `CONFIRMED_VIOLATION` من R3. CLI live مع غياب المفتاح توقف برمز عام قبل تنفيذ أدوات. لم يُختبر أي مصدر أو وجهة أو أداة حقيقية.
+نجح `python -m compileall -q app tests alembic` و`pip check` بلا تعارض. أُنشئ SQL من migration R5 في وضع Alembic offline فقط دون اتصال بالخدمة. لم يُشغّل PostgreSQL/Mongo server ولم تُثبت حزم نظام. البيئة الحالية ARM64/Linux وPython 3.12.3؛ حزم asyncpg وPyMongo كانت متاحة في بيئة ARM64. توافق الجهاز Samsung Galaxy Tab S7+ / Debian PRoot وPython 3.13.5 لم يُختبر.
 
-## القيود المفتوحة
+## التشغيل
 
-توافق Samsung Galaxy Tab S7+ / Debian PRoot ما يزال غير مختبر. لا يوجد Dashboard/UI أو API أعمال R4، ولا مصادقة أو multi-tenancy، ولا حفظ دائم لسجلات التنفيذ والأدلة، ولا checkpointer أو نسخ احتياطي لـChroma. Groq live غير متحقق. فهرس السياسات اصطناعي صغير؛ المشروع ليس أداة إنتاجية ولا ينبغي إدخال أسرار حقيقية فيه.
+اقرأ `docs/R5_LOCAL_DATABASE_SETUP.md` لإنشاء قواعد تطوير معزولة على مضيف موثوق. المتغيرات التشغيلية هي `CHAIN_SCOPE_POSTGRES_DSN`, `CHAIN_SCOPE_MONGODB_URI`, `CHAIN_SCOPE_MONGODB_DATABASE`; تُطبق migration يدويًا بـ`alembic upgrade head`. شغّل FastAPI فقط على `127.0.0.1`. لا يفترض المشروع Docker أو systemd أو خادم قواعد بيانات داخل Android PRoot.
 
 ## بوابة المرحلة
 
-حُفظت مواصفات RAG/Agent، الخطة، سجل القرارات، دليل الاستعادة، وتقرير R4 الفني. أرسل `MANAGER_HANDOFF_R4.txt` إلى مدير المشروع وانتظر الموافقة. **لا تبدأ R5 Dashboard/UI أو T1–T3 أو أي عمل إضافي قبل تفويض جديد صريح.**
+R5 فقط مفوضة، وقد انتهى نطاق الكود والاختبار والتوثيق. سلّم `MANAGER_HANDOFF_R5.txt` إلى مدير المشروع وانتظر اعتمادها. **لا تدمج إلى `main`، ولا تبدأ R6–R11 أو UI/Dashboard أو T1–T3، ولا تنفذ نشرًا، قبل تفويض صريح جديد.**
