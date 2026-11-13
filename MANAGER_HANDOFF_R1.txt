@@ -33,6 +33,7 @@ Target remains FastAPI with Jinja2/HTMX/vanilla JS, controlled synthetic lab, de
 - docs/API_CONTRACTS.md
 - docs/ARCHITECTURE.md
 - docs/PHASE_REPORTS/R1.md
+- app/core/schemas/README.md
 - app/core/schemas/contracts.py
 - app/core/schemas/export_json_schemas.py
 - app/core/schemas/json/*.schema.json (10 snapshots)
@@ -55,7 +56,7 @@ Tests validate valid/invalid manifests, event provenance and required IDs, undec
 Environment: Linux ARM64 (aarch64), Python 3.12.3, Git 2.43.0; existing FastAPI/Pydantic; no packages installed. No tablet, database, network service, or full integration testing occurred.
 
 10. GIT AND RECOVERY
-R0 baseline commit: 919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e. The R1 commit hash and final clean/dirty status will be recorded after final review and checkpoint commit. Original R0 recovery artifacts remain unchanged in /home/ubuntu/Downloads; new R1 artifacts/checksums will be saved separately if export succeeds.
+R0 baseline commit: 919ab91bd0c70ce945dd2dc2c4a070792c6d5c9e. R1 implementation checkpoint: 99301b308c8509509b57f85fa48888dbde7daa42 (`Define R1 architecture and domain contracts`). The handoff-finalization commit is the final R1 commit; `git status --porcelain` was verified empty after it. R0 recovery archives remain unchanged. Separate R1 recovery files are `chainscope-x-R1-source.zip`, `chainscope-x-R1-history.bundle`, and `chainscope-x-R1-checksums.txt` under `/home/ubuntu/Downloads`.
 
 11. IMPLEMENTED VS TESTED VS DOCUMENTED
 Implemented: Pydantic data contracts, classification join helper, bounded absence assessment helper, policy evidence precondition helper, JSON Schema exporter/snapshots, and validation tests.
