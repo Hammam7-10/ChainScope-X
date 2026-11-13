@@ -1,0 +1,63 @@
+CHAIN SCOPE X — MANAGER HANDOFF R4
+التاريخ: 2026-11-13
+الحالة: اكتمل تنفيذ R4 والتحقق منه؛ يُطلب استعراض المدير فقط. لم يبدأ R5.
+
+الغرض
+يُسلّم هذا التقرير إلى مدير المشروع لتقييم نقطة R4 عن بعد. لا يفترض أن الوصول إلى جهاز Samsung Galaxy Tab S7+ قد تم؛ التطوير والتحقق جريا في بيئة Linux ARM64 معزولة.
+
+نقطة المصدر والاستعادة
+فرع Git: main.
+وسم R4: r4-checkpoint.
+Commit تنفيذ R4: ea89f86c8fc5483280d502ac2958fd6b3967d63f (Implement R4 local RAG and bounded agent workflow).
+وسم r4-checkpoint يشير إلى commit التنفيذ المذكور. يتضمن سجل Git تاريخ R0–R3 السابق دون إعادة إنشائه أو الكتابة فوقه. إضافة ملف التسليم وتحديث حالة المشروع لاحقًا تحفظ كتغييرات metadata منفصلة؛ Git Bundle النهائي يجمع التاريخ والوسم وملف التسليم.
+
+ملفات الاستعادة النهائية، بعد إكمال commit التسليم:
+- /home/ubuntu/Downloads/chainscope-x-R4-source.zip — المصدر والاختبارات والوثائق والتسليم، من حالة main النهائية، دون .git أو .venv أو Chroma cache أو نموذج ONNX.
+- /home/ubuntu/Downloads/chainscope-x-R4-history.bundle — تاريخ Git الكامل مع main النهائي ووسم r4-checkpoint.
+- /home/ubuntu/Downloads/SHA256SUMS_R4.txt — بصمات SHA-256 لملفات المصدر والـbundle والتسليم؛ تحقق بالأمر `cd /home/ubuntu/Downloads && sha256sum -c SHA256SUMS_R4.txt`.
+لم تُستبدل ملفات استعادة R0–R3. يتضمن التقرير الفني `docs/PHASE_REPORTS/R4.md` أدلة التنفيذ الإضافية.
+
+ما اكتمل
+1. RAG محلي دائم: ChromaDB مع embeddings حقيقية مولدة محليًا عبر FastEmbed/ONNX، وملفات سياسات Markdown/TXT ذات TOML front matter، وتقسيم ثابت للمقاطع، ومعلومات المصدر والنسخة والتصنيف والحالة وبصمات المحتوى. المرشح يستبعد الوثائق غير النشطة أو الأعلى من clearance قبل ترتيب المتجهات. نتائج الاسترجاع تحفظ المراجع والاقتباسات. Chroma يدعم التخزين المحلي والتصفية الوصفية ومتجهات يقدمها التطبيق [1] [2] [3].
+2. اختيار النموذج المحلي: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, أبعاد 384 بحسب بطاقة النموذج وقائمة FastEmbed [4] [5]. حجم ONNX الفعلي المحمّل 235,052,644 بايت (نحو 224 MiB)، والكاش كاملًا نحو 241 MB. يعمل المسار عبر ONNX Runtime؛ PyTorch غير مثبت في `.venv`.
+3. LangGraph StateGraph واحدة بالترتيب: تحقق الطلب، استرجاع السياسة، فحص الأدوات/الكتالوج، تخطيط، تحقق الخطة، تنفيذ أدوات R2، تحليل R3، تقرير الأدلة. يخضع البناء لعقد Graph API في LangGraph [6]. يؤخر النظام تحميل Chroma والنموذج إلى ما بعد التحقق من الطلب.
+4. التخطيط الافتراضي `mock` حتمي. يوجد محول Groq اختياري للتخطيط فقط، بالنموذج الافتراضي `openai/gpt-oss-20b` وبطلب JSON. كتالوج النماذج ووثائق النموذج راجعت [7] [12]. مفتاح `GROQ_API_KEY` غير متوفر في بيئة الفحص؛ تكامل Groq الحي لم يُختبر بنجاح.
+5. قبل التنفيذ، يفحص validator مستقل allowlist الخاصة بالسيناريو والأداة النشطة، ومخطط argument في manifest، والموارد والوجهات المحاكاة، وأسماء الملفات، ومراجع مخارج الأدوات السابقة. الحد أربع عمليات. غياب سياق RAG أو عدم ملاءمته، والخطة المرفوضة، وتعذر Groq، كلها توقف التنفيذ قبل R2.
+6. النتيجة الأمنية لا يقررها planner أو نص RAG. تُسجل أدوات R2 الأحداث والأدلة؛ ثم يقرر `AnalysisService` في R3 النتيجة الحتمية القائمة على السياسات والمسارات والتغطية والأحداث والأدلة.
+
+نتائج السيناريوهات
+- A: `NO_VIOLATION_OBSERVED_WITHIN_COMPLETE_SCOPE` — النفي محدد بنطاق المختبر الكامل فقط، وليس حكمًا عامًا بالسلامة.
+- B: `POTENTIAL_RISK` مع `UNDECLARED_OBSERVED_EFFECT` — سجل fixture مختبري نقلًا إلى وجهة خارجية محاكاة غير معلنة. لم تُرفع النتيجة إلى مخالفة مؤكدة.
+- C: `CONFIRMED_VIOLATION` — أكد R3 القاعدة `POL-CONFIDENTIAL-SHARE-001` مع مسار أحداث ومراجع أدلة قابلة للحل.
+- D: `INCONCLUSIVE` بسبب فجوة تغطية اختبارية؛ لم يستنتج النظام السلامة من نقص الرصد.
+لا ينشئ أي سيناريو اتصالًا أو نقلًا حقيقيًا إلى الخارج؛ جميع الموارد والوجهات معرفات محاكاة اصطناعية.
+
+الأدلة والاختبارات
+- مجموعة R0–R4 كاملة: `HF_HUB_OFFLINE=1 python -m pytest -q` — 88 نجاحًا، صفر فشل، في 4.54 ثانية.
+- مجموعة R3/R4 المركزة: 49 اختبارًا ناجحًا. نجح أيضًا `python -m compileall -q app tests` و`git diff --check` و`python -m pip check`.
+- Chroma فهرس 6 وثائق إلى 10 مقاطع. الاستعلام العربي عن اكتمال المراقبة أعاد وثيقته المخصصة أولًا (distance 0.3756). استعلام إنجليزي عن منع التصدير السري أعاد وثيقته أولًا (0.2069). استعلام حادثة Workspace Storage أعاد الوثيقة المخصصة أولًا (0.2743). لم يظهر مستند RESTRICTED باستعلام clearance=PUBLIC. هذه نتائج corpus اصطناعي صغير، وليست معيار جودة عام.
+- اختبار CLI للسيناريو C بوضع mock أعاد `CONFIRMED_VIOLATION` من R3 مع 7 أحداث مرصودة. CLI بوضع live مع استعلام مناسب ومفتاح غير مضبوط توقف برمز `live_model_unavailable_or_request_failed` قبل أي أداة.
+- ثُبتت الاعتمادات داخل `.venv`: ChromaDB 1.5.9، FastEmbed 0.9.1، LangGraph 1.2.20، Groq SDK 1.7.0، pytest 8.4.2، FastAPI 0.162.0، Pydantic 2.14.3، python-dateutil 2.9.0.post0. يضم `requirements-dev.txt` اعتماد الاختبارات؛ فحص PyPI متاح في [8] [9] [10] [11].
+
+تصحيح تعاقدي مهم
+قرار R3 التاريخي D-021 أضاف `USES` إلى enum الآثار المرصودة بهدف تمثيل علاقة في الرسم. في R4 فُصل المعنيان: `EffectType` للعمليات الواقعية المسجلة فقط، و`GraphEdgeType` لعلاقات الرسم، ومنها `USES`. لم تصدر محولات R2 حدث USES مستقلًا؛ لذلك بقيت أنواع أحداث R2 ووسم علاقات الرسم متوافقين، وصُحح النوع الذي يملكه العقد.
+
+البيئة والقيود
+بيئة الفحص: Linux `aarch64`, Python 3.12.3، Git 2.43.0، ذاكرة 11 GiB، و38 GB متاحة تقريبًا من قرص 48 GB. المتطلب الفعلي لجهاز Galaxy Tab S7+ / Debian PRoot لم يُختبر. مخزن Chroma وقاعدة الأحداث المؤقتة محليان؛ أحداث R2 وأدلتها وLangGraph state لا تستمر بعد العملية. لم يُضف dashboard أو API أعمال أو مصادقة أو multi-tenancy أو تخزين إنتاجي. لا تستخدم هذه النسخة مع أسرار حقيقية.
+
+مراجع تقنية
+[1]: https://docs.trychroma.com/docs/run-chroma/clients "Chroma persistent clients"
+[2]: https://docs.trychroma.com/docs/embeddings/embedding-functions "Chroma embedding functions"
+[3]: https://docs.trychroma.com/docs/querying-collections/metadata-filtering "Chroma metadata filtering"
+[4]: https://qdrant.github.io/fastembed/examples/Supported_Models/ "FastEmbed supported models"
+[5]: https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 "Multilingual MiniLM model card"
+[6]: https://docs.langchain.com/oss/python/langgraph/graph-api "LangGraph Graph API"
+[7]: https://console.groq.com/docs/models "Groq supported models"
+[8]: https://pypi.org/project/chromadb/ "ChromaDB on PyPI"
+[9]: https://pypi.org/project/fastembed/ "FastEmbed on PyPI"
+[10]: https://pypi.org/project/langgraph/ "LangGraph on PyPI"
+[11]: https://pypi.org/project/groq/ "Groq Python SDK on PyPI"
+[12]: https://console.groq.com/docs/model/openai/gpt-oss-20b "Groq GPT OSS 20B model"
+
+طلب القرار
+يرجى مراجعة R4 واعتمادها أو طلب تغييرات محددة. بعد ذلك فقط يمكن إصدار تفويض منفصل لـR5 Dashboard/UI. R4 مكتملة عند هذه النقطة؛ لن يبدأ تطوير R5 أو اختبار T1 على الجهاز اللوحي دون موافقة صريحة.
