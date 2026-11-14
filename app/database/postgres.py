@@ -1,6 +1,7 @@
 """PostgreSQL repository for durable run, finding, evidence-reference and policy metadata."""
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timezone
 from typing import Any, Sequence
 
@@ -9,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.database.models import (
     AnalysisRunRecord, EvidenceReferenceRecord, FindingEvidenceLink, FindingRecord,
-    PolicyDocumentRecord,
+    PolicyDocumentRecord, UserRecord,
 )
 
 
@@ -28,6 +29,33 @@ class PostgresRepository:
     async def check_health(self) -> None:
         async with self.sessions() as session:
             await session.execute(text("SELECT 1"))
+
+    async def get_or_create_user(self, *, google_subject: str, email: str,
+                                 display_name: str, admin_subjects: set[str] | frozenset[str]) -> dict[str, Any]:
+        async with self.sessions.begin() as session:
+            row = await session.scalar(select(UserRecord).where(UserRecord.google_subject == google_subject))
+            now = utcnow()
+            if row is None:
+                row = UserRecord(
+                    user_id="user-" + hashlib.sha256(google_subject.encode("utf-8")).hexdigest()[:55], google_subject=google_subject,
+                    email=email, display_name=display_name or email, role=("admin" if google_subject in admin_subjects else "viewer"),
+                    active=True, created_at=now, updated_at=now, last_login_at=now,
+                )
+                session.add(row)
+            else:
+                row.email = email
+                row.display_name = display_name or email
+                row.updated_at = now
+                row.last_login_at = now
+            await session.flush()
+            return self._user_dict(row)
+
+    async def get_user(self, user_id: str) -> dict[str, Any] | None:
+        async with self.sessions() as session:
+            row = await session.get(UserRecord, user_id)
+            if row is None or not row.active:
+                return None
+            return self._user_dict(row)
 
     async def create_run(self, *, run_id: str, request_payload: dict[str, Any],
                          scenario_id: str, planner_mode: str) -> None:
@@ -215,3 +243,10 @@ class PostgresRepository:
         return {"run_id": row.run_id, "evidence_id": row.evidence_id, "kind": row.kind,
                 "sha256": row.sha256, "recorded_at": row.recorded_at.isoformat(),
                 "source_document_id": row.source_document_id, "classification": row.classification}
+
+    @staticmethod
+    def _user_dict(row: UserRecord) -> dict[str, Any]:
+        return {"user_id": row.user_id, "google_subject": row.google_subject, "email": row.email,
+                "name": row.display_name, "role": row.role, "active": row.active,
+                "created_at": row.created_at.isoformat(), "updated_at": row.updated_at.isoformat(),
+                "last_login_at": row.last_login_at.isoformat() if row.last_login_at else None}

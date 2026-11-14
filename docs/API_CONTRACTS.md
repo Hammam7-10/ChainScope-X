@@ -1,6 +1,6 @@
-# API Contracts — R1 logical design and R5 local backend
+# API Contracts — R1 logical design, R5 backend, and R6 protection layer
 
-The resource catalog below preserves the broader R1 academic design. The implemented R5 API is listed separately. Every R5 business endpoint is available only in `APP_ENV=development|test` with a loopback `HOST` (`127.0.0.1`, `localhost`, or `::1`) and a direct loopback client peer; reverse proxies are unsupported. R5 has no user authentication, role system, tenant isolation or production authorization; it must not be bound to a public/network interface. `/health` remains a minimal liveness endpoint and does not claim dependency health.
+The resource catalog below preserves the broader R1 academic design. The implemented R5 API is listed separately. Every R5 business endpoint is available only in `APP_ENV=development|test` with a loopback `HOST` (`127.0.0.1`, `localhost`, or `::1`) and a direct loopback client peer; reverse proxies are unsupported. R6 requires Google OIDC authentication, an active persisted user, the documented role permission, and CSRF protection for state changes. `/health` remains a minimal liveness endpoint and does not claim dependency health.
 
 ## R1 logical resource catalog (future work)
 
@@ -16,6 +16,8 @@ The resource catalog below preserves the broader R1 academic design. The impleme
 | Dashboard: `GET /api/dashboard/summary` | Time-bounded metrics; unknown values remain unknown, not fabricated zero. | Viewer read. |
 
 ## Implemented R5 endpoints
+
+All routes below, except dependency health, require an authenticated R6 session. Analysis and persistence-mutating routes additionally require the `X-CSRF-Token` returned by `GET /auth/session`.
 
 | Method and path | Behavior |
 |---|---|
@@ -38,6 +40,6 @@ Policy indexing/deactivation spans Chroma and PostgreSQL and is not atomic. If m
 
 ## Security boundary and not-yet-implemented contracts
 
-Local-only mode is enforced by development/test environment and loopback bind configuration. R5 does not implement authentication, authorization, tenant ownership, CSRF/session handling, quotas, rate limiting, production telemetry or a public deployment. To make endpoints available, set `APP_ENV=development` and `HOST=127.0.0.1`; configure `CHAIN_SCOPE_POSTGRES_DSN`, `CHAIN_SCOPE_MONGODB_URI`, and optionally `CHAIN_SCOPE_MONGODB_DATABASE`. Never put credentials in Git or `.env.example`.
+R6 adds Authlib-backed Google OIDC, signed HttpOnly sessions, CSRF tokens, PostgreSQL-backed users, admin/analyst/viewer RBAC, and HTTP 429 rate limiting. Local-only mode remains enforced by development/test environment and loopback bind configuration. The default in-memory rate limiter is development/test-only and is not distributed; a shared backend must be implemented and configured before multi-instance deployment. Configure `APP_ENV=development`, `HOST=127.0.0.1`, the Google variables, `CHAIN_SCOPE_SESSION_SECRET`, and the R5 database variables. Never put credentials in Git or `.env.example`.
 
-All R1 contracts for tools/catalog CRUD, user/role access, campaigns, scenario administration, remediation/verification, and the dashboard remain logical only. R5 does not start R6 or authorize a UI/dashboard, multi-user access, deployment, real external tools, or tablet validation.
+All R1 contracts for tools/catalog CRUD, campaigns, scenario administration, remediation/verification, and the dashboard remain logical only. R6 does not implement a dashboard, object storage, load balancer, shared rate-limit service, or production deployment.

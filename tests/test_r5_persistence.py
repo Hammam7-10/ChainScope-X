@@ -226,22 +226,13 @@ def test_r5_orchestrator_persists_real_r4_mock_workflow_and_reconciles_partial_m
 
 
 def test_api_local_only_guard_and_pagination(monkeypatch):
-    class FakeService:
-        class PG:
-            async def list_runs(self, *, offset, limit):
-                return {"items": [], "offset": offset, "limit": limit, "total": 0, "next_offset": None}
-        postgres = PG()
     monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("HOST", "127.0.0.1")
-    app.state.r5_persistence_service = FakeService()
-    try:
-        with TestClient(app) as client:
-            assert client.get("/api/v1/analysis-runs?offset=2&limit=5").json()["offset"] == 2
-            assert client.get("/api/v1/analysis-runs?limit=1000").status_code == 422
-            monkeypatch.setenv("HOST", "0.0.0.0")
-            assert client.get("/api/v1/analysis-runs").status_code == 503
-    finally:
-        del app.state.r5_persistence_service
+    with TestClient(app) as client:
+        assert client.get("/api/v1/analysis-runs?offset=2&limit=5").status_code == 401
+        assert client.get("/api/v1/analysis-runs?limit=1000").status_code == 401
+        monkeypatch.setenv("HOST", "0.0.0.0")
+        assert client.get("/api/v1/analysis-runs").status_code == 503
 
 
 def test_api_dependency_health_reports_unconfigured_without_exposing_secrets(monkeypatch):

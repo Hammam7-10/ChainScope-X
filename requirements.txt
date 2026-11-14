@@ -10,3 +10,5 @@ SQLAlchemy==2.0.41
 alembic==1.16.4
 asyncpg==0.30.0
 pymongo==4.13.2
+Authlib==1.6.5
+itsdangerous==2.2.0

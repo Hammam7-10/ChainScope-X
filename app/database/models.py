@@ -16,6 +16,24 @@ class Base(DeclarativeBase):
     pass
 
 
+class UserRecord(Base):
+    __tablename__ = "users"
+
+    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    google_subject: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(16), nullable=False, default="viewer", index=True)
+    active: Mapped[bool] = mapped_column(nullable=False, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        CheckConstraint("role IN ('admin','analyst','viewer')", name="ck_user_role"),
+    )
+
+
 class AnalysisRunRecord(Base):
     __tablename__ = "analysis_runs"
 
