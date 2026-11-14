@@ -60,6 +60,26 @@ def get_service(request: Request) -> R5PersistenceService:
     return service
 
 
+class DashboardSummaryResponse(BaseModel):
+    run_total: int
+    finding_total: int
+    persistence_pending: int
+    recent_runs: list[dict[str, Any]]
+    recent_findings: list[dict[str, Any]]
+    finding_assessments: dict[str, int]
+    finding_severities: dict[str, int]
+    coverage: str
+
+class PageResponse(BaseModel):
+    items: list[dict[str, Any]]
+    offset: int
+    limit: int
+    total: int
+    next_offset: int | None = None
+
+class ItemResponse(BaseModel):
+    item: dict[str, Any]
+
 class PolicyIndexRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     relative_path: str = Field(min_length=1, max_length=500)
@@ -86,6 +106,39 @@ async def dependency_health(request: Request) -> dict[str, Any]:
     return result
 
 
+@router.get("/dashboard/summary", response_model=DashboardSummaryResponse,
+            dependencies=[Depends(protected("analysis.view"))])
+async def dashboard_summary(service: R5PersistenceService = Depends(get_service)):
+    return await service.postgres.dashboard_summary()
+
+@router.get("/findings", response_model=PageResponse, dependencies=[Depends(protected("findings.view"))])
+async def list_findings(offset: int = Query(default=0, ge=0), limit: int = Query(default=20, ge=1, le=100),
+                        severity: str | None = Query(default=None, max_length=24),
+                        assessment: str | None = Query(default=None, max_length=40),
+                        q: str | None = Query(default=None, min_length=1, max_length=120),
+                        service: R5PersistenceService = Depends(get_service)):
+    return await service.postgres.list_findings(offset=offset, limit=limit, severity=severity, assessment=assessment, query=q)
+
+@router.get("/findings/{finding_id}", response_model=ItemResponse, dependencies=[Depends(protected("findings.view"))])
+async def get_finding(finding_id: str, service: R5PersistenceService = Depends(get_service)):
+    finding = await service.postgres.get_finding(finding_id)
+    if finding is None:
+        raise HTTPException(status_code=404, detail={"code": "not_found", "message": "Finding not found."})
+    return {"item": finding}
+
+@router.get("/policies", response_model=PageResponse, dependencies=[Depends(protected("analysis.view"))])
+async def list_policies(offset: int = Query(default=0, ge=0), limit: int = Query(default=20, ge=1, le=100),
+                        q: str | None = Query(default=None, min_length=1, max_length=120),
+                        service: R5PersistenceService = Depends(get_service)):
+    return await service.postgres.list_policy_documents(offset=offset, limit=limit, query=q)
+
+@router.get("/policies/{document_id}", response_model=ItemResponse, dependencies=[Depends(protected("analysis.view"))])
+async def get_policy(document_id: str, service: R5PersistenceService = Depends(get_service)):
+    item = await service.postgres.get_policy_metadata(document_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail={"code": "not_found", "message": "Policy document not found."})
+    return {"item": item}
+
 @router.post("/analysis-runs", status_code=status.HTTP_201_CREATED,
              dependencies=[Depends(protected("analysis.run", state_changing=True))])
 async def create_analysis_run(payload: AgentRequest,
@@ -107,8 +160,10 @@ async def create_analysis_run(payload: AgentRequest,
 @router.get("/analysis-runs", dependencies=[Depends(protected("analysis.view"))])
 async def list_analysis_runs(offset: int = Query(default=0, ge=0),
                              limit: int = Query(default=20, ge=1, le=100),
+                             scenario_id: str | None = Query(default=None, pattern="^[A-D]$"),
+                             run_status: str | None = Query(default=None, alias="status", pattern="^(RUNNING|PERSISTENCE_PENDING|COMPLETED|REJECTED|FAILED)$"),
                              service: R5PersistenceService = Depends(get_service)) -> dict[str, Any]:
-    return await service.postgres.list_runs(offset=offset, limit=limit)
+    return await service.postgres.list_runs(offset=offset, limit=limit, scenario_id=scenario_id, status=run_status)
 
 
 @router.get("/analysis-runs/{run_id}", dependencies=[Depends(protected("analysis.view"))])

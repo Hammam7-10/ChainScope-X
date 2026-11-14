@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ChainScope X security operations workspace">
+  <title>{{ title }} · ChainScope X</title><link rel="stylesheet" href="/static/css/app.css">
+  <script defer src="/static/vendor/htmx.min.js"></script><script defer src="/static/js/app.js"></script>
+</head>
+<body class="app-body" data-page="{{ page }}" data-role="{{ role }}"{% if run_id is defined %} data-run-id="{{ run_id }}"{% endif %}{% if finding_id is defined %} data-finding-id="{{ finding_id }}"{% endif %}{% if document_id is defined %} data-document-id="{{ document_id }}"{% endif %}>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <a class="brand" href="/app"><span class="brand-mark">CX</span><span>ChainScope <b>X</b><small>CAPABILITY INTELLIGENCE</small></span></a>
+      <nav class="nav-group">
+        <span class="nav-label">WORKSPACE</span>
+        <a href="/app" class="nav-link" data-nav="dashboard"><span>▦</span> Dashboard</a>
+        {% if role in ['admin','analyst'] %}<a href="/app/analysis/new" class="nav-link" data-nav="analysis-new"><span>＋</span> New Analysis</a>{% endif %}
+        <a href="/app/analysis-runs" class="nav-link" data-nav="runs"><span>≋</span> Analysis Runs</a>
+        <a href="/app/findings" class="nav-link" data-nav="findings"><span>◇</span> Findings Explorer</a>
+        <a href="/app/policies" class="nav-link" data-nav="policies"><span>▤</span> Policy Library</a>
+      </nav>
+      <nav class="nav-group"><span class="nav-label">PLATFORM</span>
+        <a href="/app/system" class="nav-link" data-nav="system"><span>⌁</span> System Health</a>
+        <a href="/app/account" class="nav-link" data-nav="account"><span>◉</span> Account &amp; Access</a>
+      </nav>
+      <div class="sidebar-foot"><span class="local-indicator"></span><span>Local development only</span><small>R7 · dashboard milestone</small></div>
+    </aside>
+    <main class="workspace">
+      <header class="topbar"><button class="icon-button menu-toggle" id="menu-toggle" aria-label="Open navigation" aria-expanded="false">☰</button><div class="crumb">Workspace <span>/</span> {{ title }}</div><div class="top-actions"><span class="local-pill">LOCAL</span><a class="account-chip" href="/app/account"><span class="avatar">{{ identity.name[:1]|upper }}</span><span>{{ identity.name }}<small>{{ role|upper }}</small></span></a></div></header>
+      <section class="page-head"><div><p class="eyebrow">SECURITY OPERATIONS</p><h1>{{ title }}</h1><p class="page-description">{{ description }}</p></div>{% if page == 'dashboard' and role in ['admin','analyst'] %}<a class="button primary" href="/app/analysis/new">＋ New analysis</a>{% endif %}</section>
+      <section id="notice" class="notice" role="status" hidden></section>
+      <section id="content" class="content" aria-live="polite"><div class="loading">Loading persisted application data…</div></section>
+      <footer class="app-footer">Declared capabilities are not permissions. Permissions are not execution evidence. <span>ChainScope X · Local-only</span></footer>
+    </main>
+  </div>
+  <div class="scrim" id="scrim"></div>
+</body></html>

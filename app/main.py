@@ -5,14 +5,15 @@ import secrets
 from pathlib import Path
 from typing import AsyncIterator
 
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.auth import router as auth_router
 from app.api.v1 import router as api_v1_router
+from app.web import router as web_router
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -41,13 +42,21 @@ app.add_middleware(
 )
 app.include_router(api_v1_router)
 app.include_router(auth_router)
+app.include_router(web_router)
 app.mount("/static", StaticFiles(directory=ROOT / "frontend" / "static"), name="static")
 templates = Jinja2Templates(directory=str(ROOT / "frontend" / "templates"))
 
 
+@app.exception_handler(HTTPException)
+async def http_error(request: Request, exc: HTTPException):
+    if exc.status_code == 401 and request.url.path.startswith("/app"):
+        return RedirectResponse(url="/login", status_code=303)
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail}, headers=exc.headers)
+
+
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request=request, name="index.html", context={"title": "ChainScope X"})
+def home(request: Request) -> RedirectResponse:
+    return RedirectResponse(url="/app" if request.session.get("identity") else "/login", status_code=303)
 
 
 @app.get("/health")

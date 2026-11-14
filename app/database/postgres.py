@@ -150,10 +150,17 @@ class PostgresRepository:
             row = await session.get(AnalysisRunRecord, run_id)
             return self._run_dict(row) if row else None
 
-    async def list_runs(self, *, offset: int, limit: int) -> dict[str, Any]:
+    async def list_runs(self, *, offset: int, limit: int, scenario_id: str | None = None,
+                        status: str | None = None) -> dict[str, Any]:
         async with self.sessions() as session:
-            total = int((await session.scalar(select(func.count()).select_from(AnalysisRunRecord))) or 0)
-            rows = (await session.scalars(select(AnalysisRunRecord).order_by(
+            stmt = select(AnalysisRunRecord)
+            count_stmt = select(func.count()).select_from(AnalysisRunRecord)
+            if scenario_id:
+                stmt, count_stmt = stmt.where(AnalysisRunRecord.scenario_id == scenario_id), count_stmt.where(AnalysisRunRecord.scenario_id == scenario_id)
+            if status:
+                stmt, count_stmt = stmt.where(AnalysisRunRecord.status == status), count_stmt.where(AnalysisRunRecord.status == status)
+            total = int((await session.scalar(count_stmt)) or 0)
+            rows = (await session.scalars(stmt.order_by(
                 AnalysisRunRecord.started_at.desc(), AnalysisRunRecord.run_id.desc()
             ).offset(offset).limit(limit))).all()
             return {"items": [self._run_dict(row) for row in rows], "offset": offset,
@@ -222,6 +229,71 @@ class PostgresRepository:
             rows = await session.scalars(select(PolicyDocumentRecord.document_id).where(
                 PolicyDocumentRecord.status.in_(["INDEXING_PENDING", "DEACTIVATION_PENDING"])))
             return set(rows.all())
+
+    async def dashboard_summary(self) -> dict[str, Any]:
+        async with self.sessions() as session:
+            run_total = int((await session.scalar(select(func.count()).select_from(AnalysisRunRecord))) or 0)
+            finding_total = int((await session.scalar(select(func.count()).select_from(FindingRecord))) or 0)
+            pending = int((await session.scalar(select(func.count()).select_from(AnalysisRunRecord).where(
+                AnalysisRunRecord.status == "PERSISTENCE_PENDING"))) or 0)
+            rows = (await session.scalars(select(AnalysisRunRecord).order_by(
+                AnalysisRunRecord.started_at.desc(), AnalysisRunRecord.run_id.desc()).limit(8))).all()
+            latest_findings = (await session.scalars(select(FindingRecord).join(
+                AnalysisRunRecord, FindingRecord.run_id == AnalysisRunRecord.run_id).order_by(
+                AnalysisRunRecord.completed_at.desc().nullslast(), AnalysisRunRecord.started_at.desc(),
+                FindingRecord.finding_id.desc()).limit(6))).all()
+            assessments = (await session.execute(select(FindingRecord.assessment, func.count()).group_by(
+                FindingRecord.assessment))).all()
+            severities = (await session.execute(select(FindingRecord.severity, func.count()).group_by(
+                FindingRecord.severity))).all()
+            return {"run_total": run_total, "finding_total": finding_total,
+                    "persistence_pending": pending, "recent_runs": [self._run_dict(row) for row in rows],
+                    "recent_findings": [self._finding_dict(row) for row in latest_findings],
+                    "finding_assessments": {str(k): int(v) for k, v in assessments},
+                    "finding_severities": {str(k): int(v) for k, v in severities},
+                    "coverage": "Coverage is reported per run; no aggregate coverage metric is stored."}
+
+    async def list_findings(self, *, offset: int, limit: int, severity: str | None = None,
+                            assessment: str | None = None, query: str | None = None) -> dict[str, Any]:
+        async with self.sessions() as session:
+            stmt = select(FindingRecord)
+            count_stmt = select(func.count()).select_from(FindingRecord)
+            if severity:
+                stmt = stmt.where(FindingRecord.severity == severity)
+                count_stmt = count_stmt.where(FindingRecord.severity == severity)
+            if assessment:
+                stmt = stmt.where(FindingRecord.assessment == assessment)
+                count_stmt = count_stmt.where(FindingRecord.assessment == assessment)
+            if query:
+                pattern = f"%{query}%"
+                stmt = stmt.where((FindingRecord.finding_id.ilike(pattern)) | (FindingRecord.summary.ilike(pattern)) | (FindingRecord.finding_type.ilike(pattern)))
+                count_stmt = count_stmt.where((FindingRecord.finding_id.ilike(pattern)) | (FindingRecord.summary.ilike(pattern)) | (FindingRecord.finding_type.ilike(pattern)))
+            total = int((await session.scalar(count_stmt)) or 0)
+            rows = (await session.scalars(stmt.order_by(FindingRecord.finding_id.desc()).offset(offset).limit(limit))).all()
+            return {"items": [self._finding_dict(row) for row in rows], "offset": offset, "limit": limit,
+                    "total": total, "next_offset": offset + len(rows) if offset + len(rows) < total else None}
+
+    async def get_finding(self, finding_id: str) -> dict[str, Any] | None:
+        async with self.sessions() as session:
+            row = await session.get(FindingRecord, finding_id)
+            return self._finding_dict(row) if row else None
+
+    async def list_policy_documents(self, *, offset: int, limit: int, query: str | None = None) -> dict[str, Any]:
+        async with self.sessions() as session:
+            stmt = select(PolicyDocumentRecord)
+            count_stmt = select(func.count()).select_from(PolicyDocumentRecord)
+            if query:
+                pattern = f"%{query}%"
+                criterion = (PolicyDocumentRecord.document_id.ilike(pattern)) | (PolicyDocumentRecord.source.ilike(pattern))
+                stmt, count_stmt = stmt.where(criterion), count_stmt.where(criterion)
+            total = int((await session.scalar(count_stmt)) or 0)
+            rows = (await session.scalars(stmt.order_by(PolicyDocumentRecord.updated_at.desc()).offset(offset).limit(limit))).all()
+            items = [{"document_id": r.document_id, "version": r.version, "status": r.status,
+                      "access_classification": r.access_classification, "source": r.source,
+                      "content_sha256": r.content_sha256, "updated_at": r.updated_at.isoformat(),
+                      "metadata": r.metadata_payload} for r in rows]
+            return {"items": items, "offset": offset, "limit": limit, "total": total,
+                    "next_offset": offset + len(items) if offset + len(items) < total else None}
 
     @staticmethod
     def _run_dict(row: AnalysisRunRecord) -> dict[str, Any]:
