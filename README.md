@@ -1,58 +1,185 @@
-# ChainScope X
+ChainScope X
 
-**Effect-Aware Capability Intelligence Engine** — مشروع محلي معزول لاختبار وتحليل آثار الأدوات الاصطناعية. يحافظ خط R0–R4 على مختبر R2 ومحرك R3 الحتمي وRAG/LangGraph؛ يضيف R5 API محليًا محدودًا مع PostgreSQL وMongoDB وعمليات مضبوطة لـChroma. هذا مختبر تطوير وأبحاث، وليس منصة أمن إنتاجية.
+AI-Powered Agent Security, Policy Compliance & Evidence Analysis
 
-## ما يفعله R4/R5
+ChainScope X is an AI-powered security analysis platform designed to inspect agentic systems, evaluate their interactions with tools and resources, and identify behavioral deviations from defined policies and declared capabilities.
 
-- ChromaDB محلي دائم في `data/chroma/` افتراضيًا، وملفات السياسات في `data/policies/`؛ يمكن تغيير المسارين عبر `CHAIN_SCOPE_CHROMA_DIR` و`CHAIN_SCOPE_POLICY_DIR`.
-- FastEmbed/ONNX محلي للـembeddings متعددة اللغات؛ لا يوجد embedding API بعيد.
-- LangGraph يمر عبر التحقق من الطلب ← RAG ← سجل الأدوات والسياسات ← تخطيط محدود ← تحقق حتمي ← تنفيذ الأدوات الاصطناعية الستة ← تحليل R3.
-- R3 `AnalysisService` وحده صاحب الحكم الأمني. Groq الاختياري يقتصر على اقتراح خطة؛ لا يملك صلاحية إنشاء verdict.
-- R5 يستخدم PostgreSQL للعمليات والنتائج والـfindings ومراجع الأدلة وmetadata السياسات، وMongoDB مستقلًا للأحداث والأدلة المهيكلة. Chroma قاعدة متجهات للسياسات فقط.
-- سجل التشغيل يخزن بصمة الاستعلام وطوله لا نصه، ويزيل مقتطفات السياسة من النتيجة الدائمة. أحداث وأدلة R2 المعقمة تحفظ مع provenance وبصمات SHA-256. الفشل بين PostgreSQL وMongo يظهر `PERSISTENCE_PENDING` ويمكن مصالحة upsert دون ادعاء transaction موزعة.
+Combining LangGraph agent orchestration, Retrieval-Augmented Generation (RAG), execution analysis, and evidence-based reporting, ChainScope X transforms complex agent interactions into structured, traceable security findings.
 
-## التثبيت والاختبارات
+Overview
 
-Python 3.12+ موصى به. ثبّت الاعتمادات المثبتة بالإصدارات داخل بيئة افتراضية:
+As AI agents gain the ability to interact with tools, services, and organizational resources, monitoring their behavior and ensuring policy compliance becomes essential.
 
-```sh
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install -r requirements-dev.txt
-export FASTEMBED_CACHE_PATH="${FASTEMBED_CACHE_PATH:-$HOME/.cache/fastembed}"
-export CHAIN_SCOPE_CHROMA_DIR="${CHAIN_SCOPE_CHROMA_DIR:-$PWD/data/chroma}"
-export CHAIN_SCOPE_POLICY_DIR="${CHAIN_SCOPE_POLICY_DIR:-$PWD/data/policies}"
-HF_HUB_OFFLINE=1 python -m pytest -q
-```
+ChainScope X addresses this challenge through an intelligent analysis workflow that retrieves relevant policies, inspects registered resources and capabilities, plans and validates operations, analyzes execution results, and generates structured findings.
 
-في أول تشغيل قد يُحمّل FastEmbed أوزان `paraphrase-multilingual-MiniLM-L12-v2` المحلية (نحو 235 MB أوزان، ومجلد cache نحو 241 MiB في التشغيل المتحقق). تبقى الأوزان خارج Git في `~/.cache/fastembed/`، بينما يُستثنى Chroma في `data/chroma/`.
+The platform provides a centralized dashboard for reviewing analysis runs, exploring evidence, investigating findings, and managing policy documents.
 
-اختبارات R5 العادية تستخدم SQLAlchemy models/repository مع SQLite داخل الذاكرة للاختبار وfake Mongo wire interfaces؛ لا تُعد إثباتًا لخدمة PostgreSQL/Mongo حية. اختبار تكاملي اختياري على الخدمات الحقيقية موجود في `tests/test_r5_live_databases.py` ويتخطى التنفيذ إن لم تُضبط DSNs مخصصة بأسماء قواعد بيانات `*_test`. اتبع `docs/R5_LOCAL_DATABASE_SETUP.md`.
+Key Features
 
-## تشغيل مختبر R4 (mock افتراضي)
+- AI Agent Orchestration: Multi-stage analysis workflows powered by LangGraph.
+- Policy-Aware RAG: Semantic policy retrieval using vector embeddings and ChromaDB.
+- Resource Inspection: Analysis of registered resources and declared capabilities.
+- Execution Planning: Structured planning and validation before tool execution.
+- Evidence-Based Analysis: Comparison of observed effects with expected behavior and applicable policies.
+- Security Findings: Structured assessments with finding types, severity levels, classifications, and evidence references.
+- Persistent Analysis History: Records of analysis runs, events, timelines, and findings.
+- Policy Management: Policy indexing, semantic search, inspection, and deactivation.
+- Interactive Dashboard: Centralized access to analysis results, evidence, and policies.
+- Application Security: Google authentication, role-based access control, and API rate limiting.
 
-```sh
-python -m app.agent.cli --scenario A --query "نفّذ تحويلًا داخليًا آمنًا واحفظ التقرير في مساحة العمل." --mode mock
-python -m app.agent.cli --scenario C --query "اختبر مسار البيانات السرية إلى الوجهة الخارجية المحاكاة المحظورة." --mode mock
-```
+How It Works
 
-السيناريوهات A–D فقط. موارد R2 والوجهات اصطناعية؛ لا يوجد اتصال بأداة أو وجهة فعلية. Groq live يتطلب `GROQ_API_KEY` من مخزن أسرار/بيئة محلية، ولا تُحفظ المفاتيح في Git. خطة Groq تُرفض حتميًا قبل التنفيذ إذا خالفت allowlist.
+The LangGraph agent coordinates the following workflow:
 
-## R5 API المحلي
+1. Request Validation – Validates the incoming analysis request.
+2. Policy Retrieval – Retrieves relevant policies through RAG.
+3. Registry Inspection – Examines registered resources and capabilities.
+4. Test Planning – Develops an analysis plan.
+5. Plan Validation – Validates the proposed operations.
+6. Tool Execution – Executes the selected analysis operations.
+7. Execution Analysis – Evaluates observed effects against expected behavior and policies.
+8. Evidence Reporting – Generates structured findings and persists the results.
 
-يستخدم API نفس LangGraph/R2/R3 في وضع التشغيل الدائم. يمكن تشغيل PostgreSQL وMongoDB المحليين على مضيف تطوير عادي عبر `compose.yaml` (المنافذ محصورة بـloopback) أو استخدام خدمات محلية قائمة؛ لا يفترض هذا الملف توفر Docker على Android Debian PRoot. اضبط متغيرات الاتصال خارج المستودع، ثم طبّق migration يدويًا:
+This makes ChainScope X an analysis agent rather than a conventional conversational chatbot: it coordinates workflows, interacts with tools, evaluates results, and produces traceable outputs.
 
-```sh
-export APP_ENV=development HOST=127.0.0.1
-export CHAIN_SCOPE_POSTGRES_DSN=''
-export CHAIN_SCOPE_MONGODB_URI=''
-export CHAIN_SCOPE_MONGODB_DATABASE='chainscope_dev'
+System Architecture
+
+flowchart TD
+    U[User] --> UI[Web Dashboard]
+    UI --> API[FastAPI Backend]
+
+    API --> AUTH[Authentication and RBAC]
+    API --> AGENT[LangGraph Agent]
+
+    AGENT --> RAG[RAG Policy Retrieval]
+    RAG --> CHROMA[(ChromaDB)]
+
+    AGENT --> REG[Resource Registry]
+    AGENT --> PLAN[Planning and Validation]
+    PLAN --> TOOLS[Analysis Tools]
+    TOOLS --> EVAL[Evidence Analysis]
+
+    EVAL --> FIND[Security Findings]
+    FIND --> PG[(PostgreSQL)]
+    FIND --> MONGO[(MongoDB)]
+
+    PG --> API
+    MONGO --> API
+    API --> UI
+
+Findings and Assessment
+
+Each finding provides a structured representation of an identified condition, including:
+
+Attribute| Description
+Finding Type| Category of the detected condition.
+Assessment| Analytical conclusion.
+Severity| Potential impact or risk level.
+Classification| Sensitivity level of related information.
+Evidence References| Supporting execution evidence.
+Analysis Run| Associated analysis record.
+
+The assessment model distinguishes confirmed policy violations, behavioral mismatches, potential risks, and inconclusive outcomes.
+
+Web Dashboard
+
+The application provides dedicated areas for:
+
+- Dashboard and system overview.
+- Findings Explorer and finding details.
+- Analysis runs and analysis details.
+- Evidence exploration and execution timelines.
+- New analysis requests.
+- Policy management and policy details.
+- Account and access information.
+
+Security
+
+ChainScope X integrates multiple application security controls:
+
+- Google OAuth 2.0 for authentication.
+- Role-Based Access Control (RBAC) for authorization.
+- API Rate Limiting for request protection.
+- CSRF Protection for protected operations.
+- Role Separation across administrative, analytical, and read-only access.
+
+Role| Access
+Admin| Administrative and authorized operational access.
+Analyst| Authorized analysis operations.
+Viewer| Read-only access to permitted information.
+
+Technology Stack
+
+Category| Technologies
+Language| Python
+Backend| FastAPI
+Agent Orchestration| LangGraph
+AI Knowledge Retrieval| RAG
+Vector Database| ChromaDB
+Relational Database| PostgreSQL
+NoSQL Database| MongoDB
+Authentication| Google OAuth 2.0
+Security| RBAC, Rate Limiting, CSRF
+Database Migrations| Alembic
+Interface| Web-Based Dashboard
+
+Project Structure
+
+ChainScope-X/
+├── app/
+│   ├── agent/
+│   ├── api/
+│   ├── security/
+│   └── main.py
+├── data/
+│   └── policies/
+├── docs/
+├── alembic/
+├── tests/
+├── requirements.txt
+└── .env.example
+
+Installation
+
+1. Clone the Repository
+
+git clone https://github.com/Hammam7-10/ChainScope-X.git
+cd ChainScope-X
+
+2. Create and Activate a Virtual Environment
+
+python -m venv .venv
+source .venv/bin/activate
+
+3. Install Dependencies
+
+pip install -r requirements.txt
+
+4. Configure Environment Variables
+
+cp .env.example .env
+
+Configure the required database connections, authentication settings, and AI provider credentials.
+
+5. Apply Database Migrations
+
 alembic upgrade head
-APP_ENV=development HOST=127.0.0.1 uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
 
-تظل قيم DSN فارغة أعلاه كموضع إدخال فقط؛ لا تضع بيانات اعتماد فعلية في ملفات متعقبة. المسارات الحالية تشمل `POST /api/v1/analysis-runs`، استرجاع التشغيل والـfindings والأحداث والأدلة، `POST .../{run_id}/reconcile`، وعمليات `POST/GET /api/v1/policies/...` للفهرسة/الإلغاء/البحث. دليل العقود في `docs/API_CONTRACTS.md`.
+6. Run the Application
 
-R5 **غير مصادق عليه**، لذا تعمل endpoints فقط في development/test مع `HOST` loopback، ولا يجوز كشفها على شبكة أو إنترنت. `/health` فحص liveness فقط؛ `/api/v1/health/dependencies` يفحص PostgreSQL وMongo عند تهيئتهما. لا توجد واجهة Dashboard أو مستخدمون أو صلاحيات أو multi-tenancy أو علاج آلي.
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
-لا يفترض R5 وجود Docker أو systemd أو `mongod` داخل Android Debian PRoot؛ تشغيل قواعد البيانات على الجهاز اللوحي لم يُختبر. راجع `docs/R5_BACKEND_SPEC.md` و`docs/R5_LOCAL_DATABASE_SETUP.md` و`docs/PROJECT_STATE.md` قبل تشغيله.
+Access the Application
+
+Resource| URL
+Web Dashboard| "http://127.0.0.1:8000/app"
+Health Check| "http://127.0.0.1:8000/health"
+OpenAPI Schema| "http://127.0.0.1:8000/openapi.json"
+
+---
+
+Vision
+
+ChainScope X aims to make AI agent behavior more transparent, traceable, and accountable by connecting policy awareness, resource inspection, controlled execution, and evidence-based security analysis in one integrated platform.
+
+ChainScope X — Bringing visibility, policy awareness, and accountability to agentic systems.
