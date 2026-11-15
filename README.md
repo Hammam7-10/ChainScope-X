@@ -2,45 +2,48 @@ ChainScope X
 
 AI-Powered Agent Security, Policy Compliance & Evidence Analysis
 
-ChainScope X is an AI-powered security analysis platform designed to inspect agentic systems, evaluate their interactions with tools and resources, and identify behavioral deviations from defined policies and declared capabilities.
+ChainScope X is an intelligent security analysis platform that evaluates AI agent behavior, monitors interactions with tools and resources, and identifies deviations from defined policies and declared capabilities.
 
-Combining LangGraph agent orchestration, Retrieval-Augmented Generation (RAG), execution analysis, and evidence-based reporting, ChainScope X transforms complex agent interactions into structured, traceable security findings.
+By combining AI Agent Orchestration, Retrieval-Augmented Generation (RAG), and Evidence-Based Analysis, ChainScope X provides a structured approach to making agentic system behavior more transparent, traceable, and accountable.
+
+---
 
 Overview
 
-As AI agents gain the ability to interact with tools, services, and organizational resources, monitoring their behavior and ensuring policy compliance becomes essential.
+As AI agents gain the ability to interact with tools, services, and organizational resources, ensuring that their actions remain controlled and aligned with security policies becomes increasingly important.
 
-ChainScope X addresses this challenge through an intelligent analysis workflow that retrieves relevant policies, inspects registered resources and capabilities, plans and validates operations, analyzes execution results, and generates structured findings.
+ChainScope X addresses this challenge through an integrated analysis workflow. Its AI agent retrieves relevant policies, inspects registered resources and capabilities, plans and validates operations, analyzes execution results, and produces structured security findings.
 
-The platform provides a centralized dashboard for reviewing analysis runs, exploring evidence, investigating findings, and managing policy documents.
+The platform brings these capabilities together through a centralized dashboard for investigating findings, reviewing evidence, tracking analysis runs, and managing policy documents.
 
-Key Features
+Core Capabilities
 
-- AI Agent Orchestration: Multi-stage analysis workflows powered by LangGraph.
-- Policy-Aware RAG: Semantic policy retrieval using vector embeddings and ChromaDB.
-- Resource Inspection: Analysis of registered resources and declared capabilities.
-- Execution Planning: Structured planning and validation before tool execution.
-- Evidence-Based Analysis: Comparison of observed effects with expected behavior and applicable policies.
-- Security Findings: Structured assessments with finding types, severity levels, classifications, and evidence references.
-- Persistent Analysis History: Records of analysis runs, events, timelines, and findings.
-- Policy Management: Policy indexing, semantic search, inspection, and deactivation.
-- Interactive Dashboard: Centralized access to analysis results, evidence, and policies.
-- Application Security: Google authentication, role-based access control, and API rate limiting.
+Capability| Description
+AI Agent| Coordinates multi-stage security analysis using LangGraph.
+Policy-Aware RAG| Retrieves relevant policies through semantic search.
+Resource Inspection| Examines registered resources and declared capabilities.
+Execution Planning| Develops and validates analysis plans before execution.
+Evidence Analysis| Evaluates observed behavior against expected operations and policies.
+Security Findings| Produces structured findings with assessments, severity, and classifications.
+Analysis Management| Maintains analysis history, events, timelines, and results.
+Policy Management| Supports policy indexing, retrieval, inspection, and deactivation.
+Interactive Dashboard| Provides a unified interface for analysis and investigation.
+Application Security| Integrates authentication, authorization, and API protection.
 
 How It Works
 
-The LangGraph agent coordinates the following workflow:
+The platform is powered by a coordinated LangGraph workflow:
 
-1. Request Validation – Validates the incoming analysis request.
-2. Policy Retrieval – Retrieves relevant policies through RAG.
-3. Registry Inspection – Examines registered resources and capabilities.
-4. Test Planning – Develops an analysis plan.
-5. Plan Validation – Validates the proposed operations.
-6. Tool Execution – Executes the selected analysis operations.
-7. Execution Analysis – Evaluates observed effects against expected behavior and policies.
-8. Evidence Reporting – Generates structured findings and persists the results.
+1. Request Validation — Validates the analysis request.
+2. Policy Retrieval — Retrieves relevant security policies using RAG.
+3. Registry Inspection — Examines registered resources and capabilities.
+4. Test Planning — Develops an appropriate analysis plan.
+5. Plan Validation — Validates the proposed operations.
+6. Tool Execution — Executes selected analysis operations.
+7. Execution Analysis — Evaluates observed effects against expected behavior and applicable policies.
+8. Evidence Reporting — Generates structured findings and stores the results.
 
-This makes ChainScope X an analysis agent rather than a conventional conversational chatbot: it coordinates workflows, interacts with tools, evaluates results, and produces traceable outputs.
+This workflow enables ChainScope X to do more than generate conversational responses: it coordinates tasks, interacts with tools, evaluates execution outcomes, and produces traceable analysis results.
 
 System Architecture
 
@@ -48,11 +51,11 @@ flowchart TD
     U[User] --> UI[Web Dashboard]
     UI --> API[FastAPI Backend]
 
-    API --> AUTH[Authentication and RBAC]
+    API --> SEC[Authentication and RBAC]
     API --> AGENT[LangGraph Agent]
 
     AGENT --> RAG[RAG Policy Retrieval]
-    RAG --> CHROMA[(ChromaDB)]
+    RAG --> VDB[(ChromaDB)]
 
     AGENT --> REG[Resource Registry]
     AGENT --> PLAN[Planning and Validation]
@@ -67,27 +70,28 @@ flowchart TD
     MONGO --> API
     API --> UI
 
-Findings and Assessment
+Findings & Assessment
 
-Each finding provides a structured representation of an identified condition, including:
+ChainScope X organizes analytical results into structured security findings.
 
-Attribute| Description
-Finding Type| Category of the detected condition.
-Assessment| Analytical conclusion.
-Severity| Potential impact or risk level.
-Classification| Sensitivity level of related information.
-Evidence References| Supporting execution evidence.
-Analysis Run| Associated analysis record.
+Each finding includes:
 
-The assessment model distinguishes confirmed policy violations, behavioral mismatches, potential risks, and inconclusive outcomes.
+- Finding Type: The category of the identified condition.
+- Assessment: The analytical conclusion.
+- Severity: The potential impact or risk level.
+- Classification: The sensitivity level of the associated information.
+- Evidence References: Supporting evidence linked to the analysis.
+- Analysis Run: The associated execution record.
+
+The assessment model distinguishes between confirmed policy violations, behavioral mismatches, potential risks, and inconclusive outcomes.
 
 Web Dashboard
 
-The application provides dedicated areas for:
+The application provides dedicated interfaces for:
 
 - Dashboard and system overview.
 - Findings Explorer and finding details.
-- Analysis runs and analysis details.
+- Analysis runs and detailed analysis results.
 - Evidence exploration and execution timelines.
 - New analysis requests.
 - Policy management and policy details.
@@ -95,33 +99,33 @@ The application provides dedicated areas for:
 
 Security
 
-ChainScope X integrates multiple application security controls:
+Security is integrated throughout the application architecture:
 
-- Google OAuth 2.0 for authentication.
-- Role-Based Access Control (RBAC) for authorization.
-- API Rate Limiting for request protection.
-- CSRF Protection for protected operations.
-- Role Separation across administrative, analytical, and read-only access.
+- Google OAuth 2.0 — User authentication.
+- Role-Based Access Control (RBAC) — Permission-based authorization.
+- Rate Limiting — API request protection.
+- CSRF Protection — Protection for state-changing operations.
+- Role Separation — Distinct access levels for administrators, analysts, and viewers.
 
-Role| Access
+Role| Permissions
 Admin| Administrative and authorized operational access.
 Analyst| Authorized analysis operations.
 Viewer| Read-only access to permitted information.
 
 Technology Stack
 
-Category| Technologies
-Language| Python
-Backend| FastAPI
+Layer| Technologies
+Programming Language| Python
+Backend Framework| FastAPI
 Agent Orchestration| LangGraph
-AI Knowledge Retrieval| RAG
+Knowledge Retrieval| RAG
 Vector Database| ChromaDB
 Relational Database| PostgreSQL
 NoSQL Database| MongoDB
 Authentication| Google OAuth 2.0
 Security| RBAC, Rate Limiting, CSRF
 Database Migrations| Alembic
-Interface| Web-Based Dashboard
+User Interface| Web-Based Dashboard
 
 Project Structure
 
@@ -139,47 +143,10 @@ ChainScope-X/
 ├── requirements.txt
 └── .env.example
 
-Installation
-
-1. Clone the Repository
-
-git clone https://github.com/Hammam7-10/ChainScope-X.git
-cd ChainScope-X
-
-2. Create and Activate a Virtual Environment
-
-python -m venv .venv
-source .venv/bin/activate
-
-3. Install Dependencies
-
-pip install -r requirements.txt
-
-4. Configure Environment Variables
-
-cp .env.example .env
-
-Configure the required database connections, authentication settings, and AI provider credentials.
-
-5. Apply Database Migrations
-
-alembic upgrade head
-
-6. Run the Application
-
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-
-Access the Application
-
-Resource| URL
-Web Dashboard| "http://127.0.0.1:8000/app"
-Health Check| "http://127.0.0.1:8000/health"
-OpenAPI Schema| "http://127.0.0.1:8000/openapi.json"
-
 ---
 
 Vision
 
-ChainScope X aims to make AI agent behavior more transparent, traceable, and accountable by connecting policy awareness, resource inspection, controlled execution, and evidence-based security analysis in one integrated platform.
+ChainScope X aims to strengthen trust and accountability in agentic systems by connecting policy awareness, resource inspection, controlled execution, and evidence-based security analysis within one integrated platform.
 
 ChainScope X — Bringing visibility, policy awareness, and accountability to agentic systems.
